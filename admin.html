@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediPlus Partner Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Outfit', sans-serif; background-color: #f3f4f6; }
+        
+        /* Custom Loader */
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
+        .spinner-dark { border-color: rgba(0,0,0,0.1); border-top-color: #0d9488; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .hidden-section { display: none !important; }
+        .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        
+        /* Mobile Sidebar Transition */
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased h-screen overflow-hidden">
+
+    <div id="toastBox" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="login-screen" class="flex h-screen items-center justify-center bg-gray-100 p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl fade-in">
+            <div class="text-center mb-8">
+                <div class="bg-teal-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-teal-700 text-3xl shadow-sm">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">Partner Login</h1>
+                <p class="text-gray-500 text-sm mt-1">Manage your pharmacy inventory & orders</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Store Unique ID</label>
+                    <input type="text" id="loginId" placeholder="MED-XXXX" required 
+                        class="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition font-mono text-center uppercase tracking-widest text-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Registered Mobile</label>
+                    <input type="tel" id="loginPhone" placeholder="Enter Phone Number" required 
+                        class="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition text-center text-lg">
+                </div>
+                <button type="submit" id="btnLogin" 
+                    class="w-full bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-xl font-bold text-lg shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                    Access Dashboard <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="mt-8 text-center border-t border-gray-100 pt-6">
+                <p class="text-sm text-gray-400">Don't have an ID? Use the main website to register.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="hidden-section flex h-screen bg-gray-50 relative">
+        
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden fade-in"></div>
+
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl md:shadow-none md:border-r border-gray-200 z-30 transform -translate-x-full md:translate-x-0 sidebar-transition flex flex-col h-full">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-teal-600 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold"><i class="fas fa-plus"></i></div>
+                    <span class="text-xl font-bold text-gray-800">Medi<span class="text-teal-600">Plus</span></span>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <div class="p-6 pb-2">
+                <div id="storeInfoCard" class="bg-teal-50 p-4 rounded-xl border border-teal-100">
+                    <h3 class="font-bold text-gray-800 truncate" id="dispStoreName">Loading...</h3>
+                    <p class="text-xs text-teal-600 font-mono mt-1" id="dispStoreId">...</p>
+                </div>
+            </div>
+
+            <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
+                <button onclick="switchTab('inventory')" id="nav-inventory" class="w-full text-left p-4 rounded-xl bg-teal-600 text-white font-bold shadow-md transition flex items-center gap-3">
+                    <i class="fas fa-boxes text-lg w-6"></i> Inventory
+                </button>
+                <button onclick="switchTab('orders')" id="nav-orders" class="w-full text-left p-4 rounded-xl text-gray-500 hover:bg-gray-100 font-medium transition flex items-center gap-3">
+                    <i class="fas fa-shopping-bag text-lg w-6"></i> Orders
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col h-screen overflow-hidden">
+            
+            <header class="md:hidden bg-white shadow-sm p-4 flex justify-between items-center z-10 sticky top-0">
+                <button onclick="toggleSidebar()" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-bars text-xl"></i></button>
+                <span class="font-bold text-gray-800">Dashboard</span>
+                <div class="w-8"></div> </header>
+
+            <main class="flex-1 overflow-y-auto p-4 md:p-8">
+                
+                <div id="view-inventory" class="fade-in max-w-6xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Product Inventory</h2>
+                            <p class="text-sm text-gray-500">Manage stock and prices</p>
+                        </div>
+                        <button onclick="openModal()" class="bg-teal-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-teal-700 shadow-lg flex items-center gap-2 transition active:scale-95 w-full md:w-auto justify-center">
+                            <i class="fas fa-plus"></i> Add New Product
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-2 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center gap-2">
+                        <i class="fas fa-search text-gray-400 ml-3"></i>
+                        <input type="text" id="invSearch" onkeyup="renderInventory()" placeholder="Search products..." class="flex-1 p-2 outline-none text-gray-700">
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
+                                    <tr>
+                                        <th class="p-5">Product Details</th>
+                                        <th class="p-5">Category</th>
+                                        <th class="p-5">Price</th>
+                                        <th class="p-5">Status</th>
+                                        <th class="p-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invTableBody" class="divide-y divide-gray-100 text-sm">
+                                    </tbody>
+                            </table>
+                        </div>
+                        <div id="invLoader" class="p-10 text-center hidden">
+                            <div class="spinner spinner-dark w-8 h-8"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-orders" class="hidden-section fade-in max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Orders</h2>
+                            <p class="text-sm text-gray-500">Track and fulfill orders</p>
+                        </div>
+                        <button onclick="fetchData()" class="text-teal-600 hover:bg-teal-50 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                            <i class="fas fa-sync-alt"></i> Sync
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto pb-1 no-scrollbar">
+                        <button onclick="filterOrders('Active')" id="ordBtn-Active" class="px-6 py-2 rounded-t-lg font-bold text-teal-600 border-b-2 border-teal-600 bg-teal-50 transition whitespace-nowrap">New Requests</button>
+                        <button onclick="filterOrders('History')" id="ordBtn-History" class="px-6 py-2 rounded-t-lg font-bold text-gray-400 hover:text-teal-600 border-b-2 border-transparent transition whitespace-nowrap">History</button>
+                    </div>
+
+                    <input type="text" id="ordSearch" onkeyup="renderOrders()" placeholder="Search Order ID or Customer Name..." class="w-full p-3 border border-gray-200 rounded-xl mb-6 shadow-sm focus:ring-2 focus:ring-teal-500 outline-none">
+
+                    <div id="ordersContainer" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        </div>
+                    <div id="ordLoader" class="p-20 text-center hidden">
+                        <div class="spinner spinner-dark w-10 h-10"></div>
+                        <p class="text-gray-400 mt-4">Syncing Orders...</p>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="prodModal" class="fixed inset-0 hidden z-50 flex items-center justify-center modal-overlay p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto fade-in">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="font-bold text-xl text-gray-800" id="modalTitle">Add Product</h3>
+                <button onclick="closeModal()" class="text-2xl text-gray-400 hover:text-red-500 transition">&times;</button>
+            </div>
+            <form onsubmit="saveProduct(event)" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" name="product_id" id="inpId">
+                
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold uppercase text-gray-500 mb-1 block">Medicine Name</label>
+                    <input name="medicine_name" id="inpName" required class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition">
+                </div>
+                
+                <div>
+                    <label class="text-xs font-bold uppercase text-gray-500 mb-1 block">Category</label>
+                    <select name="category" id="inpCat" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition bg-white">
+                        <option>Tablet</option>
+                        <option>Syrup</option>
+                        <option>Injection</option>
+                        <option>Equipment</option>
+                        <option>Ayurvedic</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold uppercase text-gray-500 mb-1 block">Price (₹)</label>
+                    <input type="number" name="price" id="inpPrice" required class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold uppercase text-gray-500 mb-1 block">Image URL</label>
+                    <input type="url" name="image_url" id="inpImg" placeholder="https://..." class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold uppercase text-gray-500 mb-1 block">Description</label>
+                    <textarea name="description" id="inpDesc" rows="2" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition"></textarea>
+                </div>
+
+                <div class="md:col-span-2 bg-gray-50 p-4 rounded-xl flex items-center gap-3">
+                    <input type="checkbox" name="in_stock" id="inpStock" value="TRUE" checked class="w-5 h-5 text-teal-600 rounded focus:ring-teal-500 cursor-pointer">
+                    <label for="inpStock" class="font-bold text-gray-700 cursor-pointer">Mark as Available in Stock</label>
+                </div>
+
+                <div class="md:col-span-2 pt-2">
+                    <button type="submit" id="btnSave" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold hover:bg-teal-700 shadow-lg transition transform active:scale-95 text-lg">
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // *** CONFIGURATION ***
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyvl7ezlg-g-u0XUCTkIEFjBs8Nm6gFA5vNy7EVINSF0WRlkPqTHnKUefnSSPsGLyc1lA/exec'; // <--- PASTE YOUR GOOGLE SCRIPT URL
+
+        // *** STATE ***
+        let partnerData = null;
+        let inventory = [];
+        let orders = [];
+        let currentTab = 'inventory';
+        let orderFilter = 'Active';
+
+        // *** INIT ***
+        window.onload = () => {
+            const saved = localStorage.getItem('mediPartner');
+            if(saved) {
+                partnerData = JSON.parse(saved);
+                initDashboard();
+            }
+        };
+
+        // --- AUTH ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('loginId').value.trim();
+            const phone = document.getElementById('loginPhone').value.trim();
+            const btn = document.getElementById('btnLogin');
+
+            setLoading(btn, true, 'Verifying...');
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login_store', store_id: id, phone: phone })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    partnerData = data.store_data;
+                    localStorage.setItem('mediPartner', JSON.stringify(partnerData));
+                    toast('Login Successful');
+                    initDashboard();
+                } else {
+                    toast(data.message, 'error');
+                }
+            } catch (err) { toast('Connection Error', 'error'); }
+            
+            setLoading(btn, false, 'Access Dashboard <i class="fas fa-arrow-right"></i>');
+        }
+
+        function logout() {
+            if(!confirm('Logout?')) return;
+            localStorage.removeItem('mediPartner');
+            location.reload();
+        }
+
+        function initDashboard() {
+            document.getElementById('login-screen').classList.add('hidden-section');
+            document.getElementById('dashboard-screen').classList.remove('hidden-section');
+            document.getElementById('dispStoreName').innerText = partnerData.name;
+            document.getElementById('dispStoreId').innerText = `ID: ${partnerData.id}`;
+            fetchData();
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchData() {
+            // Load based on active tab
+            if(currentTab === 'inventory') await fetchInventory();
+            else await fetchOrders();
+        }
+
+        async function fetchInventory() {
+            const tbody = document.getElementById('invTableBody');
+            const loader = document.getElementById('invLoader');
+            
+            tbody.innerHTML = '';
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_store_products&store_id=${partnerData.id}`);
+                const data = await res.json();
+                inventory = data.products || [];
+                renderInventory();
+            } catch (e) { toast('Failed to load inventory', 'error'); }
+            
+            loader.classList.add('hidden');
+        }
+
+        async function fetchOrders() {
+            const container = document.getElementById('ordersContainer');
+            const loader = document.getElementById('ordLoader');
+            
+            container.innerHTML = '';
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_store_orders&store_id=${partnerData.id}`);
+                const data = await res.json();
+                orders = data.orders || [];
+                renderOrders();
+            } catch (e) { toast('Failed to load orders', 'error'); }
+            
+            loader.classList.add('hidden');
+        }
+
+        // --- RENDERERS ---
+        function renderInventory() {
+            const q = document.getElementById('invSearch').value.toLowerCase();
+            const tbody = document.getElementById('invTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = inventory.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">No products found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const isStock = p.in_stock === 'TRUE' || p.in_stock === true;
+                const img = p.image || 'https://via.placeholder.com/100?text=No+Img';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
+                        <td class="p-5">
+                            <div class="flex items-center gap-4">
+                                <img src="${img}" class="w-12 h-12 rounded-lg object-cover border border-gray-200 shadow-sm" onerror="this.src='https://via.placeholder.com/100?text=Err'">
+                                <div>
+                                    <div class="font-bold text-gray-800">${p.name}</div>
+                                    <div class="text-xs text-gray-400 font-semibold uppercase tracking-wider">${p.description ? 'Has Desc' : 'No Desc'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-5">
+                            <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">${p.category}</span>
+                        </td>
+                        <td class="p-5 font-bold text-gray-700 font-mono">₹${p.price}</td>
+                        <td class="p-5">
+                            <button onclick="toggleStock('${p.id}', ${!isStock})" 
+                                class="${isStock ? 'bg-green-100 text-green-700 ring-1 ring-green-200' : 'bg-red-100 text-red-700 ring-1 ring-red-200'} text-xs font-bold px-3 py-1 rounded-full transition hover:opacity-80">
+                                ${isStock ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                        </td>
+                        <td class="p-5 text-right">
+                            <button onclick='openEdit(${JSON.stringify(p)})' class="text-teal-600 hover:bg-teal-50 p-2 rounded-lg transition mr-1"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteProd('${p.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            const q = document.getElementById('ordSearch').value.toLowerCase();
+            container.innerHTML = '';
+
+            let list = [];
+            if(orderFilter === 'Active') list = orders.filter(o => o.status === 'Pending' || o.status === 'Approved');
+            else list = orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
+
+            list = list.filter(o => o.customer_name.toLowerCase().includes(q) || o.order_id.toLowerCase().includes(q));
+
+            if(list.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
+                    <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-400">No orders found in this section.</p>
+                </div>`;
+                return;
+            }
+
+            list.forEach(o => {
+                const items = JSON.parse(o.items).map(i => `<div class="flex justify-between text-sm py-1 border-b border-dashed border-gray-100 last:border-0"><span class="text-gray-600">${i.name}</span><span class="font-bold text-gray-800">₹${i.price}</span></div>`).join('');
+                
+                let actions = '';
+                if(o.status === 'Pending') {
+                    actions = `
+                    <div class="grid grid-cols-2 gap-3 mt-5">
+                        <button onclick="setStatus('${o.order_id}', 'Approved')" class="bg-teal-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-teal-700 shadow transition active:scale-95">Approve</button>
+                        <button onclick="setStatus('${o.order_id}', 'Cancelled')" class="bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm hover:bg-red-100 transition active:scale-95">Refuse</button>
+                    </div>`;
+                } else if(o.status === 'Approved') {
+                    actions = `
+                    <div class="grid grid-cols-2 gap-3 mt-5">
+                        <button onclick="setStatus('${o.order_id}', 'Delivered')" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 shadow transition active:scale-95">Deliver</button>
+                        <button onclick="setStatus('${o.order_id}', 'Cancelled')" class="bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm hover:bg-red-100 transition active:scale-95">Cancel</button>
+                    </div>`;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition duration-300">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-lg">${o.customer_name}</h4>
+                                <div class="text-xs font-mono text-gray-400 mt-1 bg-gray-50 px-2 py-1 rounded inline-block">${o.order_id}</div>
+                            </div>
+                            <div class="flex flex-col items-end gap-2">
+                                <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${o.status}</span>
+                                <a href="tel:${o.customer_phone}" class="text-teal-600 bg-teal-50 w-8 h-8 rounded-full flex items-center justify-center hover:bg-teal-100 transition"><i class="fas fa-phone"></i></a>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-3 rounded-xl text-xs text-blue-800 mb-4 flex gap-2 items-start">
+                            <i class="fas fa-map-marker-alt mt-0.5"></i>
+                            <span class="font-medium">${o.customer_address}</span>
+                        </div>
+
+                        <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            ${items}
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Bill</span>
+                            <span class="text-2xl font-extrabold text-gray-800">₹${o.total}</span>
+                        </div>
+                        ${actions}
+                    </div>
+                `;
+            });
+        }
+
+        // --- ACTIONS ---
+        async function saveProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSave');
+            setLoading(btn, true, 'Saving...');
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            data.action = data.product_id ? 'edit_product' : 'add_product';
+            data.store_id = partnerData.id;
+            data.in_stock = document.getElementById('inpStock').checked ? 'TRUE' : 'FALSE';
+
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
+                toast('Product Saved Successfully');
+                closeModal();
+                fetchInventory();
+            } catch(e) { toast('Error saving product', 'error'); }
+
+            setLoading(btn, false, 'Save Product');
+        }
+
+        async function toggleStock(pid, status) {
+            // Optimistic UI
+            const p = inventory.find(x => x.id === pid);
+            if(p) p.in_stock = status;
+            renderInventory();
+
+            await fetch(API_URL, {
+                method: 'POST', 
+                body: JSON.stringify({
+                    action: 'edit_product', 
+                    product_id: pid, 
+                    store_id: partnerData.id, 
+                    only_stock: true, 
+                    in_stock: status
+                })
+            });
+            toast('Stock Updated');
+        }
+
+        async function deleteProd(pid) {
+            if(!confirm('Delete this product?')) return;
+            await fetch(API_URL, {
+                method: 'POST', 
+                body: JSON.stringify({
+                    action: 'delete_product', 
+                    product_id: pid, 
+                    store_id: partnerData.id
+                })
+            });
+            fetchInventory();
+            toast('Product Deleted');
+        }
+
+        async function setStatus(oid, status) {
+            const order = orders.find(o => o.order_id === oid);
+            if(order) order.status = status;
+            renderOrders();
+
+            await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'update_order_status',
+                    store_id: partnerData.id,
+                    order_id: oid,
+                    status: status
+                })
+            });
+            toast(`Order Marked ${status}`);
+        }
+
+        // --- UI UTILS ---
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // UI Toggle
+            document.getElementById('view-inventory').classList.add('hidden-section');
+            document.getElementById('view-orders').classList.add('hidden-section');
+            document.getElementById(`view-${tab}`).classList.remove('hidden-section');
+
+            // Nav Styles
+            const activeClass = "bg-teal-600 text-white font-bold shadow-md";
+            const inactiveClass = "text-gray-500 hover:bg-gray-100 font-medium";
+            
+            document.getElementById('nav-inventory').className = `w-full text-left p-4 rounded-xl transition flex items-center gap-3 ${tab === 'inventory' ? activeClass : inactiveClass}`;
+            document.getElementById('nav-orders').className = `w-full text-left p-4 rounded-xl transition flex items-center gap-3 ${tab === 'orders' ? activeClass : inactiveClass}`;
+
+            // Close Mobile Sidebar
+            const sidebar = document.getElementById('sidebar');
+            if(!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
+
+            fetchData();
+        }
+
+        function filterOrders(status) {
+            orderFilter = status;
+            const activeBtn = "text-teal-600 border-teal-600 bg-teal-50";
+            const inactiveBtn = "text-gray-400 border-transparent hover:text-teal-600";
+
+            document.getElementById('ordBtn-Active').className = `px-6 py-2 rounded-t-lg font-bold border-b-2 transition whitespace-nowrap ${status === 'Active' ? activeBtn : inactiveBtn}`;
+            document.getElementById('ordBtn-History').className = `px-6 py-2 rounded-t-lg font-bold border-b-2 transition whitespace-nowrap ${status === 'History' ? activeBtn : inactiveBtn}`;
+            
+            renderOrders();
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            if(sb.classList.contains('-translate-x-full')) {
+                sb.classList.remove('-translate-x-full');
+                ov.classList.remove('hidden');
+            } else {
+                sb.classList.add('-translate-x-full');
+                ov.classList.add('hidden');
+            }
+        }
+
+        function openModal() {
+            document.getElementById('prodModal').classList.remove('hidden');
+            document.getElementById('prodModal').querySelector('form').reset();
+            document.getElementById('inpId').value = '';
+            document.getElementById('modalTitle').innerText = 'Add Product';
+        }
+
+        function openEdit(p) {
+            openModal();
+            document.getElementById('modalTitle').innerText = 'Edit Product';
+            document.getElementById('inpId').value = p.id;
+            document.getElementById('inpName').value = p.name;
+            document.getElementById('inpCat').value = p.category;
+            document.getElementById('inpPrice').value = p.price;
+            document.getElementById('inpImg').value = p.image;
+            document.getElementById('inpDesc').value = p.description;
+            document.getElementById('inpStock').checked = (p.in_stock === 'TRUE' || p.in_stock === true);
+        }
+
+        function closeModal() {
+            document.getElementById('prodModal').classList.add('hidden');
+        }
+
+        function toast(msg, type = 'success') {
+            const box = document.getElementById('toastBox');
+            const el = document.createElement('div');
+            el.className = `p-4 px-6 rounded-xl shadow-xl text-white text-sm font-bold flex items-center gap-3 animate-bounce ${type === 'success' ? 'bg-gray-800' : 'bg-red-500'}`;
+            el.innerHTML = type === 'success' ? `<i class="fas fa-check-circle text-teal-400"></i> ${msg}` : `<i class="fas fa-exclamation-circle text-white"></i> ${msg}`;
+            box.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        function setLoading(btn, isLoading, text) {
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<div class="spinner border-white/80"></div>';
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = text;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
