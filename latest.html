@@ -36,6 +36,7 @@
     </style>
 </head>
 <body class="text-gray-800 antialiased pb-24 md:pb-0">
+    <audio id="chatNotificationSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <div id="toastBox" class="fixed top-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
@@ -485,6 +486,54 @@
             </div>
             <div id="myOrdersList" class="space-y-4 max-w-3xl mx-auto pb-24"></div>
         </section>
+        <section id="view-customer-chats" class="container mx-auto px-4 py-4 hidden-section fade-in h-[calc(100vh-80px)] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Messages</h2>
+                <div class="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                    <i class="fas fa-circle text-[8px] animate-pulse"></i> Live
+                </div>
+            </div>
+
+            <div class="relative mb-4">
+                <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                <input type="text" id="chatListSearch" onkeyup="filterChatList()" placeholder="Search Medical Store..." 
+                    class="w-full pl-11 p-3 border border-gray-200 rounded-xl bg-white shadow-sm outline-none focus:ring-2 focus:ring-teal-500 transition">
+            </div>
+
+            <div id="customerChatContacts" class="flex-grow overflow-y-auto space-y-2 pb-20 no-scrollbar"></div>
+        </section>
+
+        <section id="view-chat-conversation" class="fixed inset-0 z-[300] bg-[#efe7dd] hidden-section flex flex-col h-screen w-full">
+            
+            <div class="bg-teal-600 p-3 flex items-center gap-3 shadow-md shrink-0 text-white pb-safe pt-safe z-10">
+                <button onclick="closeChatScreen()" class="p-2 hover:bg-white/10 rounded-full transition">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="flex-grow cursor-default">
+                    <h3 id="chatRoomName" class="font-bold text-base leading-tight">Store Name</h3>
+                    <p class="text-[10px] text-teal-100 opacity-90 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online
+                    </p>
+                </div>
+                <a href="#" id="chatRoomPhone" class="p-2 hover:bg-white/10 rounded-full transition"><i class="fas fa-phone"></i></a>
+            </div>
+
+            <div id="chatRoomMessages" class="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-opacity-10">
+                </div>
+
+            <div class="bg-white p-3 px-4 flex items-center gap-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] shrink-0 pb-safe z-10">
+                <button class="text-gray-400 hover:text-teal-600 transition p-2"><i class="fas fa-plus"></i></button>
+                <input type="text" id="chatRoomInput" placeholder="Type a message..." autocomplete="off"
+                    onkeydown="if(event.key === 'Enter') sendDirectMessage()"
+                    class="flex-grow bg-gray-100 border-0 rounded-full px-5 py-3 focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm transition">
+                <button onclick="sendDirectMessage()" class="bg-teal-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-teal-700 transition transform active:scale-95">
+                    <i class="fas fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </section>
     </div>
 
     <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-20 z-[100] shadow-[0_-5px_15px_rgba(0,0,0,0.05)] pb-safe rounded-t-3xl">
@@ -518,14 +567,34 @@
                 <div id="adminProfileInfo"></div>
                 <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
-                <button onclick="switchAdminView('products');toggleSidebar()" class="w-full text-left p-4 rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-500/30 transition flex items-center gap-3"><i class="fas fa-box text-lg"></i> Inventory</button>
-                <button onclick="switchAdminView('orders');toggleSidebar()" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3"><i class="fas fa-clipboard-check text-lg"></i> Orders</button>
-                <div class="mt-8 pt-8 border-t border-gray-100">
-                    <button onclick="switchToHome()" class="w-full text-left p-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold transition flex items-center gap-2 mb-2"><i class="fas fa-arrow-left"></i> Customer View</button>
-                    <button onclick="logoutPartner()" class="w-full text-left p-3 text-red-500 hover:bg-red-50 rounded-xl font-bold transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout Partner</button>
+           <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
+            <button onclick="switchAdminView('products');toggleSidebar()" class="w-full text-left p-4 rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-500/30 transition flex items-center gap-3">
+                <i class="fas fa-box text-lg"></i> Inventory
+            </button>
+
+            <button onclick="switchAdminView('orders');toggleSidebar()" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3">
+                <i class="fas fa-clipboard-check text-lg"></i> Orders
+            </button>
+
+            <button onclick="switchAdminView('chats');toggleSidebar()" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3 relative">
+                <div class="relative">
+                    <i class="fas fa-comments text-lg"></i>
+                    <span id="adminChatDot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                 </div>
-            </nav>
+                <span>Chats</span>
+                
+                <span id="adminChatCount" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">0</span>
+            </button>
+
+            <div class="mt-8 pt-8 border-t border-gray-100">
+                <button onclick="switchToHome()" class="w-full text-left p-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold transition flex items-center gap-2 mb-2">
+                    <i class="fas fa-arrow-left"></i> Customer View
+                </button>
+                <button onclick="logoutPartner()" class="w-full text-left p-3 text-red-500 hover:bg-red-50 rounded-xl font-bold transition flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout Partner
+                </button>
+            </div>
+        </nav>
         </aside>
 
         <div class="flex-grow flex flex-col h-screen overflow-hidden">
@@ -566,6 +635,67 @@
                     </div>
                     <div id="adminOrderList" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
                 </div>
+                <div id="admin-view-chats" class="hidden-section fade-in h-[calc(100vh-100px)] pb-safe">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 h-full flex overflow-hidden">
+        
+        <div class="w-full md:w-1/3 border-r border-gray-100 flex flex-col bg-white">
+            <div class="p-4 border-b border-gray-100 bg-gray-50">
+                <h3 class="font-bold text-lg text-gray-800 mb-3 flex justify-between items-center">
+                    Messages 
+                    <span id="adminTotalChats" class="bg-teal-100 text-teal-700 text-[10px] px-2 py-1 rounded-full">0</span>
+                </h3>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
+                    <input type="text" id="adminChatSearch" onkeyup="filterAdminChatList()" placeholder="Search Customer..." 
+                        class="w-full pl-9 p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+            </div>
+            
+            <div id="adminChatContacts" class="flex-grow overflow-y-auto">
+                </div>
+        </div>
+
+        <div id="adminChatArea" class="hidden md:flex flex-col w-full md:w-2/3 bg-[#efe7dd]">
+            
+            <div id="adminChatEmptyState" class="flex-grow flex flex-col items-center justify-center text-gray-400 p-10 text-center">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300 text-3xl">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <p>Select a customer to start chatting</p>
+            </div>
+
+            <div id="adminChatInterface" class="hidden flex-col h-full">
+                <div class="bg-gray-50 p-3 px-4 border-b border-gray-200 flex justify-between items-center shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <button onclick="backToAdminContacts()" class="md:hidden text-gray-500"><i class="fas fa-arrow-left"></i></button>
+                        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-lg">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h3 id="adminChatHeaderName" class="font-bold text-gray-800 text-sm">Customer Name</h3>
+                            <p id="adminChatHeaderPhone" class="text-xs text-gray-500 font-mono">Phone</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a id="adminChatCallBtn" href="#" class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-green-600 hover:bg-green-50 shadow-sm"><i class="fas fa-phone-alt text-xs"></i></a>
+                    </div>
+                </div>
+
+                <div id="adminChatMessages" class="flex-grow overflow-y-auto p-4 space-y-2 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-opacity-5">
+                    </div>
+
+                <div class="p-3 bg-white border-t border-gray-100 flex items-center gap-2">
+                    <input type="text" id="adminChatInput" placeholder="Type a message..." 
+                        onkeydown="if(event.key === 'Enter') sendAdminReply()"
+                        class="flex-grow bg-gray-100 border-0 rounded-full px-4 py-3 focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
+                    <button onclick="sendAdminReply()" class="bg-teal-600 hover:bg-teal-700 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md transition transform active:scale-95">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
             </main>
         </div>
     </div>
@@ -721,37 +851,40 @@
     </div>
     
     <div id="mobileMenuModal" class="fixed inset-0 hidden z-[200] flex items-end justify-center modal-overlay md:hidden">
-        <div class="bg-white w-full rounded-t-3xl shadow-2xl p-6 fade-in flex flex-col gap-2 pb-safe">
-            <div class="flex justify-center mb-2"><div class="w-12 h-1.5 bg-gray-200 rounded-full"></div></div>
-            
-            <div id="mobMenuHeader" class="mb-4 text-center"></div>
+    <div class="bg-white w-full rounded-t-3xl shadow-2xl p-6 fade-in flex flex-col gap-2 pb-safe">
+        <div class="flex justify-center mb-2"><div class="w-12 h-1.5 bg-gray-200 rounded-full"></div></div>
+        
+        <div id="mobMenuHeader" class="mb-4 text-center"></div>
 
-            <button onclick="closeModal('mobileMenuModal');showPublicHome()" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-teal-600 shadow-sm"><i class="fas fa-home"></i></div> Home
-            </button>
-            
-            <button onclick="closeModal('mobileMenuModal');showSection('myorders');loadCustomerOrders()" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 shadow-sm"><i class="fas fa-receipt"></i></div> My Orders
-            </button>
+        <button onclick="closeModal('mobileMenuModal');showPublicHome()" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-teal-600 shadow-sm"><i class="fas fa-home"></i></div> Home
+        </button>
+        
+        <button onclick="closeModal('mobileMenuModal');openCustomerChatList()" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-green-500 shadow-sm"><i class="fas fa-comments"></i></div> Chats
+        </button>
+        
+        <button onclick="closeModal('mobileMenuModal');showSection('myorders');loadCustomerOrders()" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 shadow-sm"><i class="fas fa-receipt"></i></div> My Orders
+        </button>
 
-            <button onclick="closeModal('mobileMenuModal');showSection('about')" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-purple-500 shadow-sm"><i class="fas fa-info"></i></div> About Us
-            </button>
+        <button onclick="closeModal('mobileMenuModal');showSection('about')" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-purple-500 shadow-sm"><i class="fas fa-info"></i></div> About Us
+        </button>
 
-            <button onclick="closeModal('mobileMenuModal');showSection('contact')" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-500 shadow-sm"><i class="fas fa-headset"></i></div> Contact Support
-            </button>
+        <button onclick="closeModal('mobileMenuModal');showSection('contact')" class="w-full text-left p-4 rounded-xl bg-gray-50 hover:bg-gray-100 font-bold text-gray-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-500 shadow-sm"><i class="fas fa-headset"></i></div> Contact Support
+        </button>
 
-            <div id="mobMenuAuth" class="mt-2 grid grid-cols-2 gap-3">
-                </div>
-            
-            <button onclick="closeModal('mobileMenuModal')" class="mt-4 w-full py-3 text-gray-400 font-bold">Close</button>
-        </div>
+        <div id="mobMenuAuth" class="mt-2 grid grid-cols-2 gap-3"></div>
+        
+        <button onclick="closeModal('mobileMenuModal')" class="mt-4 w-full py-3 text-gray-400 font-bold">Close</button>
     </div>
+</div>
 
     <script>
     // *** CONFIG ***
-    const API = 'https://script.google.com/macros/s/AKfycbwY72IxPen-NU9CORslWCH_NVhHs7j_nk5YkrBSJA1g7907JHztFAOYRoc0XnA3EOcndA/exec';
+    const API = 'https://script.google.com/macros/s/AKfycbyf-Jna8ginSF6HQ48DLLl_Ahv1CyaEQyGtTW6Rmvw7zoPmVx6lkyIMdAIBX0ZHKpvrTw/exec';
     const KEY_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQY2BokImG-lKK2HjjAPxJIi2kwTLVuELWKB8BQXDEFRjG5cXn4Tj0x_qivopk9DPCCBBGDUF06FBvU/pub?output=csv';
     
     let GEMINI_API_KEY = null;
@@ -857,7 +990,7 @@
         
         list.forEach(p => {
             const stock = p.in_stock==='TRUE'||p.in_stock===true;
-            const img = p.image || 'https://via.placeholder.com/300?text=No+Image';
+            const img = p.image || 'https://placehold.co/300?text=No+Image';
             const qty = getQty(p.id);
             
             let btnHtml = '';
@@ -878,7 +1011,7 @@
                 <div class="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col group relative cursor-pointer" onclick='openProductDetailModal(${JSON.stringify(p)})'>
                     ${!stock ? '<span class="absolute top-2 left-2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md z-10 opacity-90">Out of Stock</span>' : ''}
                     <div class="h-36 overflow-hidden bg-white relative p-3 flex items-center justify-center">
-                        <img src="${img}" class="w-full h-full object-contain group-hover:scale-105 transition duration-700" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=Image+Error'">
+                        <img src="${img}" class="w-full h-full object-contain group-hover:scale-105 transition duration-700" loading="lazy" onerror="this.src='https://placehold.co/300?text=Image+Error'">
                     </div>
                     <div class="p-3 flex-grow flex flex-col">
                         <div class="flex items-center gap-1 mb-1 text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-gray-50 w-fit px-1.5 py-0.5 rounded"><i class="fas fa-store text-teal-500"></i> ${p.store_name}</div>
@@ -1040,7 +1173,7 @@
     const galleryDiv = document.getElementById('pd_gallery');
     
     // Set Initial Main Image
-    const initialSrc = p.image || 'https://via.placeholder.com/500?text=No+Image';
+    const initialSrc = p.image || 'https://placehold.co/500?text=No+Image';
     mainImg.src = initialSrc;
 
     // --- NEW: 1.1 ZOOM LOGIC ---
@@ -1262,9 +1395,303 @@ function openFullZoom(src) {
     }
 
     // *** ADMIN & UTILS ***
-    async function loadAdminData() { document.getElementById('app-public').classList.add('hidden-section'); document.getElementById('app-admin').classList.remove('hidden-section'); document.getElementById('adminProfileInfo').innerHTML = `<h2 class="font-bold text-xl text-gray-800 leading-tight">${partnerName}</h2><p class="text-xs text-gray-500 font-mono mt-1 bg-white border border-gray-200 p-1 px-2 rounded-lg inline-block tracking-wider">ID: ${partnerId}</p>`; document.getElementById('f_sid').value = partnerId; fetchAdminProducts(); }
+    // ==========================================
+// 💬 ADMIN CHAT LOGIC (Unified Contact List)
+// ==========================================
+// Function to update the Red Badge on the Chat Icon
+function updateChatNotification(count) {
+    const badge = document.getElementById('adminChatCount');
+    const dot = document.getElementById('adminChatDot');
+
+    if (count > 0) {
+        // Show Badge & Dot
+        if(badge) {
+            badge.innerText = count > 99 ? '99+' : count;
+            badge.classList.remove('hidden');
+        }
+        if(dot) dot.classList.remove('hidden');
+    } else {
+        // Hide them
+        if(badge) badge.classList.add('hidden');
+        if(dot) dot.classList.add('hidden');
+    }
+}
+
+// ==========================================
+// 💬 ROBUST ADMIN CHAT CONTACTS LOADER
+// ==========================================
+
+// 2. Fetch Contacts (Merges Orders + Active Chats)
+async function fetchAdminChatContacts() {
+    const listDiv = document.getElementById('adminChatContacts');
+    const badge = document.getElementById('adminChatCount');
+
+    // Show loader only if empty
+    if(listDiv.innerHTML.trim() === '') {
+        listDiv.innerHTML = '<div class="text-center py-10"><div class="spinner spinner-dark"></div><p class="text-xs text-gray-400 mt-2">Syncing Contacts...</p></div>';
+    }
+
+    try {
+        // A. GET ORDERS (If not loaded, fetch them now)
+        if (!rawAdminOrders || rawAdminOrders.length === 0) {
+            console.log("Fetching orders for contact list...");
+            const orderRes = await fetch(`${API}?action=get_store_orders&store_id=${partnerId}`);
+            const orderData = await orderRes.json();
+            rawAdminOrders = orderData.orders || [];
+        }
+
+        // B. GET ACTIVE CHATS
+        let activeChats = [];
+        try {
+            const chatRes = await fetch(`${API}?action=get_chat_list&store_id=${partnerId}`);
+            const chatData = await chatRes.json();
+            activeChats = chatData.list || [];
+            
+            // Update Red Badge
+            if(badge) {
+                if(activeChats.length > 0) {
+                    badge.innerText = activeChats.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        } catch (e) { console.warn("Chat list fetch failed", e); }
+
+        // C. MERGE DATA (Orders + Chats)
+        const contactsMap = {};
+
+        // 1. Add everyone who has ordered
+        rawAdminOrders.forEach(o => {
+            if (o.customer_phone) {
+                contactsMap[o.customer_phone] = {
+                    id: o.customer_phone,
+                    name: o.customer_name || 'Customer',
+                    source: 'order' // Default source
+                };
+            }
+        });
+
+        // 2. Add/Update everyone who has chatted
+        activeChats.forEach(c => {
+            if (contactsMap[c.id]) {
+                contactsMap[c.id].source = 'chat'; // Upgrade to active chat
+                contactsMap[c.id].name = c.name || contactsMap[c.id].name;
+            } else {
+                contactsMap[c.id] = {
+                    id: c.id,
+                    name: c.name || 'Unknown User',
+                    source: 'chat'
+                };
+            }
+        });
+
+        // D. RENDER LIST
+        const allContacts = Object.values(contactsMap);
+        listDiv.innerHTML = '';
+
+        if (allContacts.length === 0) {
+            listDiv.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-40 text-gray-400 p-4 text-center">
+                    <i class="fas fa-users-slash text-2xl mb-2"></i>
+                    <p class="text-sm font-bold">No Contacts Found</p>
+                    <p class="text-[10px] mt-1">Wait for orders or messages.</p>
+                </div>`;
+            return;
+        }
+
+        // Sort: Active Chats First
+        allContacts.sort((a, b) => (a.source === 'chat' ? -1 : 1));
+
+        allContacts.forEach(c => {
+            // Highlight active selection
+            // Ensure currentChatPartnerID is defined globally
+            const isActive = (typeof currentChatPartnerID !== 'undefined' && currentChatPartnerID === c.id) 
+                ? 'bg-teal-50 border-l-4 border-teal-600' 
+                : 'hover:bg-gray-50 border-l-4 border-transparent';
+            
+            // Icon Logic
+            let iconHtml = '<i class="fas fa-shopping-bag text-gray-300 text-xs"></i>';
+            if (c.source === 'chat') iconHtml = '<span class="bg-green-100 text-green-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">Message</span>';
+
+            listDiv.innerHTML += `
+            <div onclick="loadAdminChatConversation('${c.id}','${c.name}')" class="p-4 cursor-pointer border-b border-gray-50 flex items-center gap-3 transition-all ${isActive} contact-item" data-search="${c.name.toLowerCase()} ${c.id}">
+                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-sm shadow-sm border border-gray-200">
+                    ${c.name.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex-grow min-w-0">
+                    <div class="flex justify-between items-center mb-0.5">
+                        <h4 class="text-sm font-bold text-gray-800 truncate">${c.name}</h4>
+                        ${iconHtml}
+                    </div>
+                    <p class="text-xs text-gray-400 font-mono truncate tracking-wide">${c.id}</p>
+                </div>
+            </div>`;
+        });
+
+    } catch (e) {
+        console.error("Chat Render Error:", e);
+        listDiv.innerHTML = '<p class="text-center text-red-400 text-sm mt-10">Failed to load contacts.</p>';
+    }
+}
+
+// 2. Load Conversation
+async function loadAdminChatConversation(phone, name) {
+    currentChatPartnerID = phone;
+    
+    // UI Updates
+    document.getElementById('adminChatEmptyState').classList.add('hidden');
+    document.getElementById('adminChatInterface').classList.remove('hidden');
+    document.getElementById('adminChatInterface').classList.add('flex'); // Ensure flex display
+    
+    // Mobile View: Hide List, Show Chat
+    document.getElementById('adminChatContacts').parentElement.classList.add('hidden', 'md:flex');
+    document.getElementById('adminChatArea').classList.remove('hidden');
+    document.getElementById('adminChatArea').classList.add('flex');
+
+    // Set Header Info
+    document.getElementById('adminChatHeaderName').innerText = name;
+    document.getElementById('adminChatHeaderPhone').innerText = phone;
+    document.getElementById('adminChatCallBtn').href = `tel:${phone}`;
+
+    // Loading State
+    const msgDiv = document.getElementById('adminChatMessages');
+    msgDiv.innerHTML = '<div class="text-center py-20"><div class="spinner spinner-dark"></div></div>';
+
+    // Start Polling
+    fetchAdminChatHistory();
+    if(chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(fetchAdminChatHistory, 4000);
+    
+    // Refresh list to update active highlight
+    fetchAdminChatContacts(); 
+}
+
+// 3. Back Button (Mobile Only)
+function backToAdminContacts() {
+    document.getElementById('adminChatContacts').parentElement.classList.remove('hidden');
+    document.getElementById('adminChatArea').classList.add('hidden');
+    currentChatPartnerID = null;
+    clearInterval(chatInterval);
+}
+
+// 4. Filter Contact List
+function filterAdminChatList() {
+    const q = document.getElementById('adminChatSearch').value.toLowerCase();
+    document.querySelectorAll('.contact-item').forEach(item => {
+        const searchData = item.getAttribute('data-search');
+        item.style.display = searchData.includes(q) ? 'flex' : 'none';
+    });
+}
+
+// 5. Fetch History
+async function fetchAdminChatHistory() {
+    if(!currentChatPartnerID || !partnerId) return;
+    try {
+        const res = await fetch(`${API}?action=get_chats&user1=${partnerId}&user2=${currentChatPartnerID}`);
+        const d = await res.json();
+        renderAdminMessages(d.chats || []);
+    } catch(e) { console.error("Chat Error", e); }
+}
+
+// 6. Render Messages (WhatsApp Style)
+function renderAdminMessages(chats) {
+    const div = document.getElementById('adminChatMessages');
+    
+    // Prevent rendering if hidden
+    if(div.offsetParent === null) return;
+
+    if(div.innerHTML.includes('spinner')) div.innerHTML = ''; // Clear loader
+
+    if(chats.length === 0 && div.innerHTML === '') {
+        div.innerHTML = `<div class="text-center text-gray-400 text-xs mt-10 bg-white/50 p-2 rounded-lg mx-auto w-fit">Start a conversation with this customer.</div>`;
+        return;
+    }
+
+    let html = '';
+    chats.forEach(c => {
+        const isMe = String(c.sender_id) === String(partnerId); // Admin is Sender
+        const timeStr = new Date(c.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        html += `
+        <div class="flex w-full ${isMe ? 'justify-end' : 'justify-start'}">
+            <div class="${isMe ? 'bg-[#d9fdd3] text-gray-800 rounded-l-xl rounded-tr-none' : 'bg-white text-gray-800 rounded-r-xl rounded-tl-none'} px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.1)] max-w-[75%] min-w-[80px] relative text-sm mb-1">
+                <p class="leading-relaxed whitespace-pre-wrap">${c.message}</p>
+                <div class="flex justify-end items-center gap-1 mt-1 opacity-70">
+                    <span class="text-[9px] text-gray-500">${timeStr}</span>
+                    ${isMe ? '<i class="fas fa-check-double text-[9px] text-blue-500"></i>' : ''}
+                </div>
+            </div>
+        </div>`;
+    });
+
+    if (div.innerHTML !== html) {
+        div.innerHTML = html;
+        div.scrollTop = div.scrollHeight;
+    }
+}
+
+// 7. Send Reply
+async function sendAdminReply() {
+    const input = document.getElementById('adminChatInput');
+    const msg = input.value.trim();
+    if(!msg || !currentChatPartnerID) return;
+    
+    // Optimistic UI
+    const div = document.getElementById('adminChatMessages');
+    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    // Clear empty state text
+    if(div.innerText.includes('Start a conversation')) div.innerHTML = '';
+
+    div.innerHTML += `
+    <div class="flex w-full justify-end animate-pulse">
+        <div class="bg-[#d9fdd3] text-gray-800 rounded-l-xl rounded-tr-none px-3 py-2 shadow-sm max-w-[75%] min-w-[80px] text-sm mb-1 opacity-70">
+            <p>${msg}</p>
+            <div class="flex justify-end items-center gap-1 mt-1">
+                <span class="text-[10px] text-gray-500">${timeStr}</span>
+                <i class="far fa-clock text-[10px]"></i>
+            </div>
+        </div>
+    </div>`;
+    div.scrollTop = div.scrollHeight;
+    input.value='';
+
+    try {
+        await fetch(API, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'send_chat',
+                sender_id: partnerId,
+                sender_name: partnerName,
+                receiver_id: currentChatPartnerID,
+                message: msg
+            })
+        });
+        fetchAdminChatHistory();
+    } catch(e) {
+        alert("Failed to send.");
+    }
+}
+    // 1. Main Admin Loader
+async function loadAdminData() {
+    document.getElementById('app-public').classList.add('hidden-section');
+    document.getElementById('app-admin').classList.remove('hidden-section');
+    
+    // Set Profile Info
+    document.getElementById('adminProfileInfo').innerHTML = `
+        <h2 class="font-bold text-xl text-gray-800 leading-tight">${partnerName}</h2>
+        <p class="text-xs text-gray-500 font-mono mt-1 bg-white border border-gray-200 p-1 px-2 rounded-lg inline-block tracking-wider">ID: ${partnerId}</p>`;
+    document.getElementById('f_sid').value = partnerId;
+
+    // Load Inventory
+    fetchAdminProducts();
+    
+    // Load Chats (This triggers the badge update too)
+    fetchAdminChatContacts();
+}
     async function fetchAdminProducts(){ document.getElementById('adminProductTable').innerHTML='<tr><td colspan="4" class="p-10 text-center"><div class="spinner spinner-dark"></div> Loading Inventory...</td></tr>'; const res=await fetch(`${API}?action=get_store_products&store_id=${partnerId}`); const d=await res.json(); rawAdminProducts=d.products||[]; renderAdminProducts(); }
-    function renderAdminProducts(){ const q=document.getElementById('adminProdSearch').value.toLowerCase(); const t=document.getElementById('adminProductTable'); t.innerHTML=''; rawAdminProducts.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const stk = p.in_stock==='TRUE'||p.in_stock===true; const img = p.image || 'https://via.placeholder.com/100?text=No+Img'; t.innerHTML+=`<tr class="border-b last:border-0 hover:bg-gray-50 transition group"><td class="p-4 flex items-center gap-3"><img src="${img}" class="w-12 h-12 rounded-lg object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/100?text=Error'"><div><div class="font-bold text-gray-800 text-sm">${p.name}</div><div class="text-[10px] text-gray-500 uppercase">${p.category}</div></div></td><td class="p-4 font-bold text-gray-700">₹${p.price}</td><td class="p-4"><button onclick="toggleStock('${p.id}',${!stk})" class="${stk?'bg-green-100 text-green-700 border border-green-200':'bg-red-100 text-red-700 border border-red-200'} text-[10px] font-bold px-3 py-1.5 rounded-full w-24 text-center transition hover:scale-105 shadow-sm">${stk?'IN STOCK':'STOCK OUT'}</button></td><td class="p-4 text-center"><button onclick='openProductModal(${JSON.stringify(p)})' class="text-gray-400 hover:text-teal-600 p-2 transition"><i class="fas fa-edit"></i></button><button onclick="delProd('${p.id}')" class="text-gray-400 hover:text-red-500 p-2 transition"><i class="fas fa-trash-alt"></i></button></td></tr>`; }); }
+    function renderAdminProducts(){ const q=document.getElementById('adminProdSearch').value.toLowerCase(); const t=document.getElementById('adminProductTable'); t.innerHTML=''; rawAdminProducts.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const stk = p.in_stock==='TRUE'||p.in_stock===true; const img = p.image || 'https://placehold.co/100?text=No+Img'; t.innerHTML+=`<tr class="border-b last:border-0 hover:bg-gray-50 transition group"><td class="p-4 flex items-center gap-3"><img src="${img}" class="w-12 h-12 rounded-lg object-cover border border-gray-200" onerror="this.src='https://placehold.co/100?text=Error'"><div><div class="font-bold text-gray-800 text-sm">${p.name}</div><div class="text-[10px] text-gray-500 uppercase">${p.category}</div></div></td><td class="p-4 font-bold text-gray-700">₹${p.price}</td><td class="p-4"><button onclick="toggleStock('${p.id}',${!stk})" class="${stk?'bg-green-100 text-green-700 border border-green-200':'bg-red-100 text-red-700 border border-red-200'} text-[10px] font-bold px-3 py-1.5 rounded-full w-24 text-center transition hover:scale-105 shadow-sm">${stk?'IN STOCK':'STOCK OUT'}</button></td><td class="p-4 text-center"><button onclick='openProductModal(${JSON.stringify(p)})' class="text-gray-400 hover:text-teal-600 p-2 transition"><i class="fas fa-edit"></i></button><button onclick="delProd('${p.id}')" class="text-gray-400 hover:text-red-500 p-2 transition"><i class="fas fa-trash-alt"></i></button></td></tr>`; }); }
     // --- ADMIN ORDER LOGIC ---
 
     async function fetchAdminOrders() {
@@ -1447,53 +1874,58 @@ function openFullZoom(src) {
     function toggleSidebar() { const s = document.getElementById('adminSidebar'); const o = document.getElementById('sidebarOverlay'); if(s.classList.contains('-translate-x-full')) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { s.classList.add('-translate-x-full'); o.classList.add('hidden'); } }
     function finishPartnerReg() { closeModal('partnerSuccessModal'); openAuth('partner'); }
     function switchAdminView(v) {
-    // 1. Hide/Show Content Sections
-    const prodSection = document.getElementById('admin-view-products');
-    const ordSection = document.getElementById('admin-view-orders');
+    // 1. Hide All Admin Sections
+    ['products', 'orders', 'chats'].forEach(view => {
+        const el = document.getElementById(`admin-view-${view}`);
+        if (el) el.classList.add('hidden-section');
+    });
     
-    // Safety check
-    if (prodSection) prodSection.classList.add('hidden-section');
-    if (ordSection) ordSection.classList.add('hidden-section');
-    
+    // 2. Show the Target Section
     const target = document.getElementById(`admin-view-${v}`);
     if (target) target.classList.remove('hidden-section');
 
-    // 2. Find Buttons by looking for their Icons
-    // We search all buttons to find the one containing the specific icon class
+    // 3. Find Buttons by Icon Class
     const allButtons = Array.from(document.querySelectorAll("button"));
     
     const btnProd = allButtons.find(b => b.innerHTML.includes('fa-box'));
     const btnOrd  = allButtons.find(b => b.innerHTML.includes('fa-clipboard-check'));
+    const btnChat = allButtons.find(b => b.innerHTML.includes('fa-comments'));
 
-    if (btnProd && btnOrd) {
-        // 3. Define the exact Styles
-        // Active Style (The Greenish/Teal Success Color)
-        const activeClass = ['bg-teal-600', 'text-white', 'font-bold', 'shadow-lg', 'shadow-teal-500/30'];
-        
-        // Inactive Style (The Gray Color)
-        const inactiveClass = ['text-gray-600', 'hover:bg-gray-100', 'font-medium'];
+    // 4. Define Styles
+    // Active: Teal Background + Shadow
+    const activeClass = ['bg-teal-600', 'text-white', 'font-bold', 'shadow-lg', 'shadow-teal-500/30'];
+    // Inactive: Gray Text
+    const inactiveClass = ['text-gray-600', 'hover:bg-gray-100', 'font-medium'];
 
-        // Helper to swap styles
-        const makeActive = (btn) => {
-            btn.classList.remove(...inactiveClass); // Remove gray
-            btn.classList.add(...activeClass);      // Add green
-        };
-
-        const makeInactive = (btn) => {
-            btn.classList.remove(...activeClass);   // Remove green
-            btn.classList.add(...inactiveClass);    // Add gray
-        };
-
-        // 4. Execute Swap
-        if (v === 'products') {
-            makeActive(btnProd);    // Inventory -> Green
-            makeInactive(btnOrd);   // Orders -> Gray
+    // Helper to switch styles
+    const setStyle = (btn, isActive) => {
+        if (!btn) return;
+        btn.classList.remove(...activeClass, ...inactiveClass); // Clean slate
+        if (isActive) {
+            btn.classList.add(...activeClass);
         } else {
-            makeInactive(btnProd);  // Inventory -> Gray
-            makeActive(btnOrd);     // Orders -> Green
-            
-            // Fetch orders
-            if(typeof fetchAdminOrders === 'function') fetchAdminOrders();
+            btn.classList.add(...inactiveClass);
+        }
+    };
+
+    // 5. Apply Styles based on selection
+    setStyle(btnProd, v === 'products');
+    setStyle(btnOrd, v === 'orders');
+    setStyle(btnChat, v === 'chats');
+
+    // 6. Fetch Data based on View
+    if (v === 'orders') {
+        if(typeof fetchAdminOrders === 'function') fetchAdminOrders();
+    }
+    
+    if (v === 'chats') {
+        if(typeof fetchAdminChatContacts === 'function') {
+            // Ensure we have orders loaded first (since contacts often come from order history)
+            if (typeof rawAdminOrders !== 'undefined' && rawAdminOrders.length === 0) {
+                fetchAdminOrders().then(() => fetchAdminChatContacts());
+            } else {
+                fetchAdminChatContacts();
+            }
         }
     }
 }
@@ -2003,7 +2435,204 @@ function renderMyOrders(list) {
     async function doPReg(e) { e.preventDefault(); setLoading('btnPReg',true); const d=Object.fromEntries(new FormData(e.target)); d.action='register_store'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnPReg',false); if(j.status === 'error') { toast(j.message, 'error'); } else { closeModal('authModal'); document.getElementById('regSuccessId').innerText = j.store_id; document.getElementById('partnerSuccessModal').classList.remove('hidden'); } }
     function logoutUser(){ localStorage.removeItem('mediUser'); user=null; updateAuthUI(); showPublicHome(); toast('Logged Out'); }
     function logoutPartner(){ localStorage.removeItem('mediPartner'); partnerId=null; partnerName='Partner'; updateAuthUI(); showPublicHome(); toggleSidebar(); toast('Partner Logged Out'); }
+    // --- CUSTOMER CHAT LOGIC ---
+
+// ==========================================
+// 💬 CUSTOMER CHAT SYSTEM (Optimized)
+// ==========================================
+
+// --- 1. Chat List Logic ---
+
+// ==========================================
+// 🚀 LIVE CHAT SYSTEM (WhatsApp Style + Notifications)
+// ==========================================
+
+// Global Variables for Chat State
+let chatInterval = null;
+let currentChatPartnerID = null;
+let lastChatData = ""; // To detect new messages
+
+// --- 1. Chat List Logic ---
+
+async function openCustomerChatList() {
+    if (!user) { alert("Please Login to Chat."); openAuth('login'); return; }
+    showSection('customer-chats');
+    const list = document.getElementById('customerChatContacts');
     
+    if(list.innerHTML.trim() === '') list.innerHTML = '<div class="text-center py-20"><div class="spinner spinner-dark"></div><p class="mt-2 text-gray-400 text-xs">Loading Stores...</p></div>';
+
+    if (rawProducts.length === 0) {
+        try {
+            const res = await fetch(`${API}?action=get_all_data`);
+            const d = await res.json();
+            rawProducts = d.products || [];
+        } catch (e) {
+            list.innerHTML = '<p class="text-center text-red-400 mt-10">Failed to load contacts.</p>';
+            return;
+        }
+    }
+    renderChatContacts(rawProducts);
+}
+
+function renderChatContacts(products) {
+    const list = document.getElementById('customerChatContacts');
+    const uniqueStores = {};
+    products.forEach(p => { if (p.store_id && p.store_name) uniqueStores[p.store_id] = { name: p.store_name, city: p.store_city || 'Medical Partner' }; });
+    const storeIds = Object.keys(uniqueStores);
+    list.innerHTML = '';
+
+    if (storeIds.length === 0) { list.innerHTML = '<div class="text-center py-10 text-gray-400">No medical partners found.</div>'; return; }
+
+    const colors = ['bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-purple-100 text-purple-600', 'bg-orange-100 text-orange-600'];
+    storeIds.forEach(sid => {
+        const store = uniqueStores[sid];
+        const colorClass = colors[Math.floor(Math.random() * colors.length)];
+        list.innerHTML += `
+        <div onclick="startDirectChat('${sid}', '${store.name}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition active:scale-95 store-contact-item" data-name="${store.name.toLowerCase()}">
+            <div class="w-12 h-12 rounded-full ${colorClass} flex items-center justify-center font-bold text-lg shadow-inner">${store.name.charAt(0).toUpperCase()}</div>
+            <div class="flex-grow"><h3 class="font-bold text-gray-800 text-sm">${store.name}</h3><p class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-map-marker-alt text-[10px]"></i> ${store.city}</p></div>
+            <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i class="fas fa-comment-dots"></i></button>
+        </div>`;
+    });
+}
+
+function filterChatList() {
+    const q = document.getElementById('chatListSearch').value.toLowerCase();
+    document.querySelectorAll('.store-contact-item').forEach(item => {
+        item.style.display = item.getAttribute('data-name').includes(q) ? 'flex' : 'none';
+    });
+}
+
+// --- 2. Live Conversation Logic ---
+
+function startDirectChat(storeId, storeName) {
+    if (!user) { alert("Please login first."); openAuth('login'); return; }
+    
+    currentChatPartnerID = storeId;
+    lastChatData = ""; // Reset state
+    
+    // UI Setup
+    document.getElementById('chatRoomName').innerText = storeName;
+    document.getElementById('view-chat-conversation').classList.remove('hidden-section');
+    
+    // Initial Load
+    document.getElementById('chatRoomMessages').innerHTML = '<div class="text-center py-20"><div class="spinner spinner-dark"></div></div>';
+    
+    fetchDirectChatHistory();
+    
+    // Start Live Polling (Every 3 Seconds)
+    if(chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(fetchDirectChatHistory, 3000); 
+}
+
+function closeChatScreen() {
+    document.getElementById('view-chat-conversation').classList.add('hidden-section');
+    clearInterval(chatInterval); // Stop polling to save data
+    currentChatPartnerID = null;
+}
+
+// Fetch from Server
+async function fetchDirectChatHistory() {
+    if(!currentChatPartnerID || !user) return;
+    try {
+        // Add a timestamp to prevent browser caching
+        const res = await fetch(`${API}?action=get_chats&user1=${user.phone}&user2=${currentChatPartnerID}&t=${Date.now()}`);
+        const d = await res.json();
+        
+        if(d.status === 'success') {
+            // Check if data actually changed before re-rendering (Prevents flickering)
+            const currentDataString = JSON.stringify(d.chats);
+            if (currentDataString !== lastChatData) {
+                // NEW MESSAGE DETECTED!
+                if(lastChatData !== "") { 
+                    playNotificationSound(); // Only beep if it's an update, not the first load
+                }
+                lastChatData = currentDataString;
+                renderDirectMessages(d.chats);
+            }
+        }
+    } catch(e) { console.error("Sync error", e); }
+}
+
+// Render Messages to Screen
+function renderDirectMessages(chats) {
+    const div = document.getElementById('chatRoomMessages');
+    if(div.offsetParent === null) return;
+    
+    // Clear spinner only if it exists
+    if(div.innerHTML.includes('spinner')) div.innerHTML = '';
+    
+    if(chats.length === 0) {
+        div.innerHTML = `<div class="flex justify-center mt-10"><div class="bg-yellow-50 text-yellow-800 text-xs px-4 py-2 rounded-lg shadow-sm border border-yellow-100 text-center max-w-xs"><i class="fas fa-lock text-yellow-600 mb-1"></i><br>Messages are encrypted. Say 'Hi'.</div></div>`;
+        return;
+    }
+
+    let html = '';
+    chats.forEach(c => {
+        const isMe = String(c.sender_id) === String(user.phone);
+        const timeStr = new Date(c.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        html += `
+        <div class="flex w-full ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in-up">
+            <div class="${isMe ? 'bg-[#d9fdd3] text-gray-800 rounded-l-xl rounded-tr-none' : 'bg-white text-gray-800 rounded-r-xl rounded-tl-none'} px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.1)] max-w-[85%] min-w-[100px] relative text-sm mb-1 group">
+                <p class="leading-relaxed whitespace-pre-wrap break-words">${c.message}</p>
+                <div class="flex justify-end items-center gap-1 mt-1 opacity-70">
+                    <span class="text-[9px] text-gray-500">${timeStr}</span>
+                    ${isMe ? '<i class="fas fa-check-double text-[9px] text-blue-500"></i>' : ''}
+                </div>
+            </div>
+        </div>`;
+    });
+
+    div.innerHTML = html;
+    div.scrollTop = div.scrollHeight; // Auto-scroll to newest
+}
+
+// Play Sound Helper
+function playNotificationSound() {
+    const audio = document.getElementById('chatNotificationSound');
+    if(audio) {
+        audio.play().catch(e => console.log("Audio play blocked (user didn't interact yet)"));
+        if("vibrate" in navigator) navigator.vibrate(200); // Vibrate phone
+    }
+}
+
+// --- 3. Send Message (Optimistic UI) ---
+
+async function sendDirectMessage() {
+    const input = document.getElementById('chatRoomInput');
+    const msg = input.value.trim();
+    if(!msg) return;
+    
+    // Instant UI Update (Optimistic)
+    const div = document.getElementById('chatRoomMessages');
+    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    if(div.innerText.includes('Say \'Hi\'')) div.innerHTML = '';
+    
+    div.insertAdjacentHTML('beforeend', `
+    <div class="flex w-full justify-end animate-pulse">
+        <div class="bg-[#d9fdd3] text-gray-800 rounded-l-xl rounded-tr-none px-3 py-2 shadow-sm max-w-[85%] min-w-[100px] text-sm mb-1 opacity-70">
+            <p>${msg}</p>
+            <div class="flex justify-end items-center gap-1 mt-1"><span class="text-[10px] text-gray-500">${timeStr}</span><i class="far fa-clock text-[10px]"></i></div>
+        </div>
+    </div>`);
+    
+    div.scrollTop = div.scrollHeight;
+    input.value = '';
+    input.focus();
+
+    try {
+        await fetch(API, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'send_chat', sender_id: user.phone, sender_name: user.name, receiver_id: currentChatPartnerID, message: msg }) 
+        });
+        
+        // Force refresh to get server timestamp & double ticks
+        fetchDirectChatHistory();
+    } catch(e) { 
+        alert("Message failed. Check internet."); 
+    }
+}
 </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
-const SHEET_ID = '1kR_fzOJBvxyB0dX_ndh-cDsTdNcxTMPKoCk5htg9Axo'; 
+const SHEET_ID = '1QS5GvK185kWiPnzeykEWgJN9efShcKamx3ssN1I_080'; 
+const IMAGE_FOLDER_ID = '1jBcpMmYF2RQVRfyKWFw3kPo3QK8Hqx9m'; // Your Drive Folder ID
 
 function doPost(e) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -9,12 +10,15 @@ function doPost(e) {
     if (action === 'register_store') return registerStore(ss, data);
     if (action === 'login_store') return loginStore(ss, data);
     if (action === 'add_product') return addProduct(ss, data);
-    if (action === 'edit_product') return editProduct(ss, data);
+    if (action === 'edit_product') return editProduct(ss, data); 
     if (action === 'delete_product') return deleteProduct(ss, data);
     if (action === 'register_customer') return registerCustomer(ss, data);
     if (action === 'login_customer') return loginCustomer(ss, data);
     if (action === 'place_order') return placeOrder(ss, data);
     if (action === 'update_order_status') return updateOrderStatus(ss, data);
+    
+    // 🟢 NEW: SEND CHAT ACTION 🟢
+    if (action === 'send_chat') return sendChat(ss, data);
     
     return response({status: 'error', message: 'Unknown Action'});
   } catch (err) {
@@ -31,84 +35,209 @@ function doGet(e) {
   if (action === 'get_store_orders') return getStoreOrders(ss, e.parameter.store_id);
   if (action === 'get_customer_orders') return getCustomerOrders(ss, e.parameter.phone);
   
+  // 🟢 NEW: GET CHATS ACTION 🟢
+  if (action === 'get_chats') return getChats(ss, e.parameter.user1, e.parameter.user2);
+  
   return response({status: 'error', message: 'Invalid GET action'});
 }
 
-// --- PARTNER REGISTRATION (DUPLICATE CHECK) ---
-function registerStore(ss, data) {
-  const sheet = ss.getSheetByName('Stores');
-  const rows = sheet.getDataRange().getValues();
-  
-  // Check for duplicates (Name + Phone)
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][1]).toLowerCase() === String(data.store_name).toLowerCase() && 
-        String(rows[i][3]) === String(data.phone)) {
-      return response({status: 'error', message: 'This Store is already registered.'});
-    }
+// --- HELPER: UPLOAD IMAGE TO DRIVE ---
+function uploadImage(base64Data, fileName) {
+  try {
+    const folder = DriveApp.getFolderById(IMAGE_FOLDER_ID);
+    const contentType = base64Data.substring(5, base64Data.indexOf(';'));
+    const bytes = Utilities.base64Decode(base64Data.split(',')[1]);
+    const blob = Utilities.newBlob(bytes, contentType, fileName);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    // Return the Direct Link
+    return "https://lh3.googleusercontent.com/d/" + file.getId(); 
+  } catch (e) {
+    return "Error: " + e.toString();
   }
-
-  const lastRow = sheet.getLastRow();
-  let newId = 'MED-' + (1000 + lastRow); 
-  if (lastRow === 1) newId = 'MED-1001';
-
-  sheet.appendRow([
-    newId, 
-    data.store_name, 
-    data.owner_name, 
-    data.phone, 
-    data.city, 
-    data.address, 
-    new Date()
-  ]);
-  return response({status: 'success', store_id: newId});
 }
 
-// --- PARTNER LOGIN (SECURE: ID + PHONE) ---
-function loginStore(ss, data) {
-  const sheet = ss.getSheetByName('Stores');
-  const rows = sheet.getDataRange().getValues();
-  
-  for(let i=1; i<rows.length; i++) {
-    // Check ID (Col A) AND Phone (Col D)
-    const idMatch = String(rows[i][0]).trim() == String(data.store_id).trim();
-    const phoneMatch = String(rows[i][3]).trim() == String(data.phone).trim();
+// ==========================================
+// 🟢 NEW CHAT FUNCTIONS 🟢
+// ==========================================
 
-    if(idMatch && phoneMatch) {
-       return response({
-         status:'success', 
-         store_data: {
-           id: rows[i][0], 
-           name: rows[i][1] // Store Name
-         }
-       });
-    }
-  }
-  return response({status:'error', message: 'Invalid Store ID or Mobile Number'});
+function sendChat(ss, data) {
+  const sheet = ss.getSheetByName('Chats');
+  // Append Row: [Timestamp, Sender_ID, Receiver_ID, Message, Sender_Name]
+  sheet.appendRow([
+    new Date(), 
+    String(data.sender_id), 
+    String(data.receiver_id), 
+    data.message,
+    data.sender_name
+  ]);
+  return response({status: 'success'});
+}
+
+function getChats(ss, user1, user2) {
+  const sheet = ss.getSheetByName('Chats');
+  const rows = sheet.getDataRange().getValues(); // Get all data
+  
+  // Filter logic: Find messages where (Sender is User1 AND Receiver is User2) OR (Sender is User2 AND Receiver is User1)
+  // This ensures both parties see the full conversation history.
+  const conversation = rows.slice(1).filter(r => {
+    const s = String(r[1]);   // Sender ID column
+    const rec = String(r[2]); // Receiver ID column
+    return (s === user1 && rec === user2) || (s === user2 && rec === user1);
+  }).map(r => ({
+    timestamp: r[0],
+    sender_id: r[1],
+    receiver_id: r[2],
+    message: r[3],
+    sender_name: r[4]
+  }));
+
+  return response({status: 'success', chats: conversation});
 }
 
 // --- PRODUCT MANAGEMENT ---
+
 function addProduct(ss, data) {
   const sheet = ss.getSheetByName('Products');
   const id = 'PROD-' + Date.now();
-  const row = [String(id), String(data.store_id), String(data.category), String(data.medicine_name), Number(data.price), String(data.image_url||''), String(data.description||''), 'TRUE', String(data.private_notes||''), new Date()];
+  
+  // 1. Handle Images
+  let finalImageUrls = [];
+  if (data.images && Array.isArray(data.images)) {
+    data.images.forEach(item => {
+      if (typeof item === 'object' && item.base64) {
+         finalImageUrls.push(uploadImage(item.base64, item.name));
+      } else if (typeof item === 'string' && item.trim() !== "") {
+         finalImageUrls.push(item.trim());
+      }
+    });
+  } else if (data.image_url) {
+    finalImageUrls.push(data.image_url);
+  }
+
+  // 2. Prepare Base Row
+  const mainImage = finalImageUrls.length > 0 ? finalImageUrls[0] : '';
+  
+  let row = [
+    String(id), 
+    String(data.store_id), 
+    String(data.category), 
+    String(data.medicine_name), 
+    Number(data.price), 
+    String(mainImage), 
+    String(data.description||''), 
+    'TRUE', 
+    String(data.private_notes||''), 
+    new Date()
+  ];
+
+  // 3. Append Extra Images
+  if (finalImageUrls.length > 1) {
+    for (let i = 1; i < finalImageUrls.length; i++) {
+      row.push(finalImageUrls[i]); 
+    }
+  }
+
+  // 4. Update Headers
+  const currentLastCol = sheet.getLastColumn();
+  const requiredCols = row.length;
+  
+  if (requiredCols > currentLastCol) {
+    for (let c = 11; c <= requiredCols; c++) {
+      let photoNum = c - 10; 
+      let headerName = 'Product_photo' + photoNum;
+      if (sheet.getRange(1, c).getValue() === "") {
+        sheet.getRange(1, c).setValue(headerName);
+      }
+    }
+  }
+
   sheet.appendRow(row);
-  return response({status: 'success', message: 'Product Added'});
+  return response({status: 'success', message: 'Product Added with ' + finalImageUrls.length + ' images'});
 }
 
 function editProduct(ss, data) {
   const sheet = ss.getSheetByName('Products');
   const rows = sheet.getDataRange().getValues();
+  
+  // 1. Locate the Product Row
+  let rowIndex = -1;
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] == data.product_id && rows[i][1] == data.store_id) {
-      if(data.only_stock) {
-        sheet.getRange(i+1, 8).setValue(data.in_stock); 
-      } else {
-        sheet.getRange(i+1, 3, 1, 7).setValues([[data.category, data.medicine_name, data.price, data.image_url, data.description, data.in_stock, data.private_notes]]);
-      }
-      return response({status: 'success', message: 'Updated'});
+      rowIndex = i + 1; // Convert to Sheet Row Number
+      break;
     }
   }
-  return response({status: 'error', message: 'Product not found'});
+
+  if (rowIndex === -1) {
+    return response({status: 'error', message: 'Product not found'});
+  }
+
+  // 2. Handle Stock-Only Update
+  if (data.only_stock) {
+    sheet.getRange(rowIndex, 8).setValue(data.in_stock);
+    return response({status: 'success', message: 'Stock Updated'});
+  }
+
+  // 3. Process Images (Upload New & Keep Old)
+  let finalImageUrls = [];
+  
+  if (data.images && Array.isArray(data.images)) {
+    data.images.forEach(item => {
+      // Upload new file
+      if (typeof item === 'object' && item.base64) {
+         finalImageUrls.push(uploadImage(item.base64, item.name));
+      } 
+      // Keep existing URL
+      else if (typeof item === 'string' && item.trim() !== "") {
+         finalImageUrls.push(item.trim());
+      }
+    });
+  } else if (data.image_url) {
+     finalImageUrls.push(data.image_url);
+  }
+
+  // 4. CLEAR OLD DATA (The Critical Fix)
+  // We check existing columns and wipe Col 11 (K) onwards for this row
+  const maxCols = sheet.getMaxColumns();
+  if (maxCols >= 11) {
+    sheet.getRange(rowIndex, 11, 1, maxCols - 10).clearContent();
+  }
+
+  // 5. Update Main Columns (A-J)
+  const mainImage = finalImageUrls.length > 0 ? finalImageUrls[0] : '';
+
+  sheet.getRange(rowIndex, 3, 1, 7).setValues([[
+    data.category, 
+    data.medicine_name, 
+    data.price, 
+    mainImage,        
+    data.description, 
+    data.in_stock, 
+    data.private_notes
+  ]]);
+
+  // 6. Write New Extra Images (Col K onwards)
+  if (finalImageUrls.length > 1) {
+    const extraImages = finalImageUrls.slice(1); // Remove the first one (Main)
+    
+    // Create headers if needed
+    const currentLastCol = sheet.getLastColumn();
+    const requiredLastCol = 10 + extraImages.length;
+    
+    if (requiredLastCol > currentLastCol) {
+       for (let c = currentLastCol + 1; c <= requiredLastCol; c++) {
+          let photoNum = c - 10; 
+          sheet.getRange(1, c).setValue('Product_photo' + photoNum);
+       }
+    }
+
+    // Write the new image list
+    sheet.getRange(rowIndex, 11, 1, extraImages.length).setValues([extraImages]);
+  }
+
+  return response({status: 'success', message: 'Product Updated Successfully'});
 }
 
 function deleteProduct(ss, data) {
@@ -123,12 +252,39 @@ function deleteProduct(ss, data) {
   return response({status: 'error', message: 'Product not found'});
 }
 
+// --- PARTNER REGISTRATION & LOGIN ---
+function registerStore(ss, data) {
+  const sheet = ss.getSheetByName('Stores');
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][1]).toLowerCase() === String(data.store_name).toLowerCase() && 
+        String(rows[i][3]) === String(data.phone)) {
+      return response({status: 'error', message: 'This Store is already registered.'});
+    }
+  }
+  const lastRow = sheet.getLastRow();
+  let newId = 'MED-' + (1000 + lastRow); 
+  if (lastRow === 1) newId = 'MED-1001';
+  sheet.appendRow([newId, data.store_name, data.owner_name, data.phone, data.city, data.address, new Date()]);
+  return response({status: 'success', store_id: newId});
+}
+
+function loginStore(ss, data) {
+  const sheet = ss.getSheetByName('Stores');
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(String(rows[i][0]).trim() == String(data.store_id).trim() && String(rows[i][3]).trim() == String(data.phone).trim()) {
+       return response({status:'success', store_data: {id: rows[i][0], name: rows[i][1]}});
+    }
+  }
+  return response({status:'error', message: 'Invalid Store ID or Mobile Number'});
+}
+
 // --- ORDERS ---
 function placeOrder(ss, data) {
   const sheet = ss.getSheetByName('Orders');
   const orderId = 'ORD-' + Math.floor(Math.random() * 1000000);
   sheet.appendRow([orderId, data.store_id, data.customer_name, data.customer_phone, data.customer_address, data.order_items, data.total_amount, new Date(), 'Pending']);
-  
   const stores = ss.getSheetByName('Stores').getDataRange().getValues();
   let storePhone = "N/A", storeName = "Unknown";
   for(let i=1; i<stores.length; i++){
@@ -157,7 +313,10 @@ function getAllData(ss) {
   stores.forEach(s => storeMap[s[0]] = {name: s[1], city: s[4]});
   
   const formatted = products.map(p => ({
-    id: p[0], store_id: p[1], category: p[2], name: p[3], price: p[4], image: p[5], description: p[6], in_stock: p[7],
+    id: p[0], store_id: p[1], category: p[2], name: p[3], price: p[4], 
+    image: p[5], 
+    extra_images: p.slice(10), // Get all columns from K onwards
+    description: p[6], in_stock: p[7],
     store_name: storeMap[p[1]] ? storeMap[p[1]].name : 'Unknown Store',
     store_city: storeMap[p[1]] ? storeMap[p[1]].city : ''
   }));
@@ -167,7 +326,10 @@ function getAllData(ss) {
 function getStoreProducts(ss, storeId) {
   const rows = ss.getSheetByName('Products').getDataRange().getValues().slice(1);
   const myProducts = rows.filter(r => r[1] == storeId).map(r => ({
-    id: r[0], category: r[2], name: r[3], price: r[4], image: r[5], description: r[6], in_stock: r[7], private_notes: r[8]
+    id: r[0], category: r[2], name: r[3], price: r[4], 
+    image: r[5], 
+    extra_images: r.slice(10), 
+    description: r[6], in_stock: r[7], private_notes: r[8]
   }));
   return response({status: 'success', products: myProducts});
 }
@@ -184,7 +346,6 @@ function getCustomerOrders(ss, phone) {
   const storeSheet = ss.getSheetByName('Stores').getDataRange().getValues().slice(1);
   const storeMap = {};
   storeSheet.forEach(s => storeMap[s[0]] = {name: s[1], phone: s[3]});
-
   const rows = ss.getSheetByName('Orders').getDataRange().getValues().slice(1);
   const myOrders = rows.filter(r => r[3] == phone).map(r => ({
     order_id: r[0], store_name: storeMap[r[1]] ? storeMap[r[1]].name : 'Unknown Store', store_phone: storeMap[r[1]] ? storeMap[r[1]].phone : 'N/A',
@@ -204,3 +365,12 @@ function loginCustomer(ss, data) {
   return response({status:'error'});
 }
 function response(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
+
+// ==========================================
+// 🔴 RUN THIS FUNCTION ONCE TO AUTHORIZE 🔴
+// ==========================================
+function authorizeScript() {
+  const folder = DriveApp.getFolderById("1VmuobD8eTs7KtVtd_UFzKiRP8i6VWE3l"); 
+  folder.createFile("temp_test_file.txt", "Just checking permissions"); 
+  console.log("WRITE Access Granted!");
+}
