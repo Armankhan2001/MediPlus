@@ -11,27 +11,21 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Outfit', sans-serif; background-color: #f8f9fa; -webkit-tap-highlight-color: transparent; }
-        
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
         .spinner-dark { border: 3px solid rgba(13, 148, 136, 0.2); border-top: 3px solid #0d9488; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .hidden-section { display: none !important; }
         .modal-overlay { background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
         .fade-in { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
         .chat-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
@@ -39,25 +33,27 @@
 
     <div id="toastBox" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-    <div id="aiChatWindow" class="hidden fixed inset-0 z-[110] md:inset-auto md:bottom-24 md:right-6 md:w-96 md:h-[550px] bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden chat-slide-up">
-        <div class="bg-teal-700 p-4 flex justify-between items-center text-white shrink-0">
+    <div id="aiChatWindow" class="hidden fixed inset-0 z-[110] md:inset-auto md:bottom-24 md:right-6 md:w-96 md:h-[600px] bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden chat-slide-up">
+        <div class="bg-gray-900 p-4 flex justify-between items-center text-white shrink-0">
             <div class="flex items-center gap-3">
-                <div class="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <i class="fas fa-robot text-lg"></i>
+                <div class="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm relative">
+                    <i class="fas fa-robot text-lg" id="chatHeaderIcon"></i>
+                    <div id="chatStatusDot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900"></div>
                 </div>
                 <div>
-                    <h3 class="font-bold text-lg leading-tight">Nacsum AI</h3>
-                    <p class="text-[10px] text-teal-100 opacity-90">Health Assistant</p>
+                    <h3 class="font-bold text-lg leading-tight" id="chatHeaderTitle">Nacsum Assistant</h3>
+                    <p class="text-[10px] text-gray-300 opacity-90" id="chatHeaderSubtitle">AI Powered</p>
                 </div>
             </div>
-            <button onclick="toggleAiChat()" class="w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 transition"><i class="fas fa-times text-lg"></i></button>
+            <button onclick="toggleAiChat()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition"><i class="fas fa-times text-lg"></i></button>
         </div>
         
         <div id="aiMessages" class="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50 scroll-smooth pb-20 md:pb-4">
             <div class="flex gap-3">
                 <div class="w-8 h-8 rounded-full bg-teal-100 flex-shrink-0 flex items-center justify-center text-teal-600 text-xs"><i class="fas fa-robot"></i></div>
                 <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-700 border border-gray-100">
-                    Hello! I am your Nacsum AI assistant.<br><b>How can I help you today?</b>
+                    Hello! I can help you find medicines.<br><br>
+                    To chat with a store directly, type <b>@StoreName</b> (e.g., @Medicart) followed by your message.
                 </div>
             </div>
         </div>
@@ -68,37 +64,32 @@
             </div>
         </div>
         
-        <div class="p-3 bg-white border-t border-gray-100 flex gap-2 shrink-0">
-            <input type="text" id="aiInput" onkeydown="handleAiEnter(event)" placeholder="Ask about medicine..." class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
-            <button onclick="sendAiMessage()" class="bg-teal-600 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:bg-teal-700 transition shadow-md active:scale-95"><i class="fas fa-paper-plane text-sm"></i></button>
+        <div class="p-3 bg-white border-t border-gray-100 flex gap-2 shrink-0 relative">
+            <input type="text" id="aiInput" onkeydown="handleAiEnter(event)" placeholder="Ask AI or @Partner..." class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 transition">
+            <button onclick="sendUnifiedMessage()" class="bg-gray-900 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:bg-black transition shadow-md active:scale-95"><i class="fas fa-paper-plane text-sm"></i></button>
         </div>
     </div>
 
-    <div class="fixed bottom-6 right-6 z-[90] hidden md:block">
-        <button onclick="toggleAiChat()" class="bg-gray-900 hover:bg-teal-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 group ring-4 ring-white">
-            <i class="fas fa-comment-medical text-2xl group-hover:animate-pulse"></i>
+    <div class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[90]">
+        <button onclick="toggleAiChat()" class="bg-teal-600 hover:bg-teal-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 group ring-4 ring-white">
+            <i class="fas fa-comment-medical text-2xl"></i>
         </button>
     </div>
 
     <div id="app-public" class="transition-opacity duration-300 min-h-screen flex flex-col">
-        
         <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 shadow-sm">
             <div class="container mx-auto px-4 h-16 flex justify-between items-center">
                 <div class="flex items-center gap-3 cursor-pointer select-none" onclick="showPublicHome()">
                     <div class="bg-gradient-to-br from-teal-500 to-emerald-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30">
                         <i class="fas fa-hand-holding-heart text-lg"></i>
                     </div>
-
                     <div class="leading-tight">
                         <span class="text-xl font-extrabold tracking-tight text-gray-800">
                             Nacsum <span class="text-teal-600">Biotech</span>
                         </span>
-                        <div class="text-[11px] text-gray-500 font-medium tracking-wide">
-                            Science with Humanity
-                        </div>
+                        <div class="text-[11px] text-gray-500 font-medium tracking-wide">Science with Humanity</div>
                     </div>
                 </div>
-
                 
                 <div class="hidden md:flex items-center gap-6">
                     <button onclick="showPublicHome()" class="font-medium text-gray-600 hover:text-teal-600 transition">Home</button>
@@ -129,15 +120,13 @@
                             <i class="fas fa-map-marker-alt text-teal-600 ml-3 text-sm"></i>
                             <select id="cityFilter" onchange="searchPublic()" class="w-full bg-transparent p-2 text-sm font-bold text-gray-800 outline-none cursor-pointer">
                                 <option value="All">All Cities</option>
-                                </select>
+                            </select>
                         </div>
-                        
                         <div class="bg-white rounded-xl md:rounded-r-xl md:rounded-l-none shadow-lg flex items-center p-1.5 flex-grow transform transition-all focus-within:ring-4 ring-teal-500/30">
                             <i class="fas fa-search text-gray-400 ml-3 text-sm"></i>
                             <input type="text" id="publicSearch" onkeyup="searchPublic()" placeholder="Search Medicine, Area, or Store..." class="flex-grow p-2.5 outline-none text-gray-800 placeholder-gray-400 font-medium bg-transparent text-sm">
                         </div>
                     </div>
-
                 </div>
                 <div class="absolute top-0 right-0 w-48 h-48 bg-teal-500 rounded-full blur-[80px] opacity-20 translate-x-1/3 -translate-y-1/3"></div>
             </div>
@@ -152,25 +141,6 @@
                         <div class="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-teal-500 shadow-sm transition transform group-active:scale-95"><i class="fas fa-pills text-2xl"></i></div>
                         <span class="text-xs font-medium text-gray-600">Tablets</span>
                     </button>
-                    <button onclick="filterCat('Syrup')" class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group">
-                        <div class="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-orange-400 shadow-sm transition transform group-active:scale-95"><i class="fas fa-wine-bottle text-2xl"></i></div>
-                        <span class="text-xs font-medium text-gray-600">Syrups</span>
-                    </button>
-                    <button onclick="filterCat('Injection')" class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group">
-                        <div class="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-blue-500 shadow-sm transition transform group-active:scale-95"><i class="fas fa-syringe text-2xl"></i></div>
-                        <span class="text-xs font-medium text-gray-600">Injections</span>
-                    </button>
-                    <button onclick="filterCat('Ayurvedic')" class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group">
-                        <div class="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600 shadow-sm transition transform group-active:scale-95"><i class="fas fa-leaf text-2xl"></i></div>
-                        <span class="text-xs font-medium text-gray-600">Ayurvedic</span>
-                    </button>
-                    <button onclick="filterCat('Personal Care')" class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group">
-                            <div class="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-pink-600 shadow-sm transition transform group-active:scale-95">
-                                <i class="fas fa-pump-soap text-2xl"></i>
-                            </div>
-                            <span class="text-xs font-medium text-gray-600">Personal Care</span>
-                        </button>
-
                 </div>
             </div>
 
@@ -180,79 +150,14 @@
         </section>
 
         <section id="view-about" class="container mx-auto px-4 mt-8 fade-in pb-24 hidden-section">
-            <div class="max-w-3xl mx-auto">
-                <h1 class="text-3xl font-extrabold text-gray-800 mb-6">About Nacsum Biotech</h1>
-                <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
-                    <p class="text-gray-600 leading-relaxed mb-4">
-                        Nacsum Biotech is a pioneering healthcare platform dedicated to bridging the gap between pharmaceutical providers and patients. Our mission is to ensure that essential medicines and healthcare products are accessible to everyone, everywhere, instantly.
-                    </p>
-                    <p class="text-gray-600 leading-relaxed mb-4">
-                        We partner with trusted local pharmacies and medical stores to bring you a vast inventory of genuine products. Whether you need prescription medicines, ayurvedic remedies, or surgical equipment, Nacsum connects you to the nearest stockist for rapid delivery.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                        <div class="bg-teal-50 p-4 rounded-xl text-center">
-                            <i class="fas fa-check-circle text-2xl text-teal-600 mb-2"></i>
-                            <h3 class="font-bold text-gray-800">Genuine Products</h3>
-                        </div>
-                        <div class="bg-blue-50 p-4 rounded-xl text-center">
-                            <i class="fas fa-shipping-fast text-2xl text-blue-600 mb-2"></i>
-                            <h3 class="font-bold text-gray-800">Fast Delivery</h3>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-xl text-center">
-                            <i class="fas fa-user-shield text-2xl text-purple-600 mb-2"></i>
-                            <h3 class="font-bold text-gray-800">Secure & Safe</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+             <div class="text-center text-gray-500 py-20">About Us Content Here</div>
         </section>
-
+        
         <section id="view-contact" class="container mx-auto px-4 mt-8 fade-in pb-24 hidden-section">
-            <div class="max-w-3xl mx-auto">
-                <h1 class="text-3xl font-extrabold text-gray-800 mb-6">Contact Us</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 class="font-bold text-xl text-gray-800 mb-4">Get in Touch</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 shrink-0"><i class="fas fa-map-marker-alt"></i></div>
-                                <div>
-                                    <p class="font-bold text-gray-800 text-sm">Head Office</p>
-                                    <p class="text-gray-500 text-sm">Nacsum Biotech Towers, Tech Park, Mumbai, Maharashtra 400001</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 shrink-0"><i class="fas fa-envelope"></i></div>
-                                <div>
-                                    <p class="font-bold text-gray-800 text-sm">Email Us</p>
-                                    <p class="text-gray-500 text-sm">support@nacsum.com</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 shrink-0"><i class="fas fa-phone-alt"></i></div>
-                                <div>
-                                    <p class="font-bold text-gray-800 text-sm">Call Us</p>
-                                    <p class="text-gray-500 text-sm">+91 98765 43210</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-teal-600 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
-                        <h3 class="font-bold text-xl mb-2 relative z-10">Partner with Us</h3>
-                        <p class="text-teal-100 text-sm mb-6 relative z-10">Are you a pharmacy owner? Join our network to increase your sales.</p>
-                        <button onclick="openAuth('partner')" class="bg-white text-teal-700 px-6 py-3 rounded-xl font-bold hover:bg-teal-50 transition relative z-10">Register as Partner</button>
-                        <i class="fas fa-handshake text-9xl absolute -bottom-4 -right-4 text-teal-500 opacity-50 transform rotate-[-20deg]"></i>
-                    </div>
-                </div>
-            </div>
+             <div class="text-center text-gray-500 py-20">Contact Us Content Here</div>
         </section>
 
         <section id="view-myorders" class="container mx-auto px-4 py-6 hidden-section fade-in">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">My Orders</h2>
-            <div class="flex gap-4 border-b border-gray-200 mb-6 sticky top-16 bg-[#f8f9fa] z-10 pt-2">
-                <button onclick="filterMyOrders('Current')" id="tabMy-Current" class="pb-3 border-b-2 border-teal-600 font-bold text-teal-600 px-4 transition">Active</button>
-                <button onclick="filterMyOrders('History')" id="tabMy-History" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-teal-600 px-4 transition">History</button>
-            </div>
             <div id="myOrdersList" class="space-y-4 max-w-3xl mx-auto pb-24"></div>
         </section>
     </div>
@@ -262,13 +167,13 @@
             <i class="fas fa-home text-lg"></i>
             <span class="text-[10px] font-medium">Home</span>
         </button>
-        <button onclick="showSection('about')" class="flex flex-col items-center gap-1 w-full h-full justify-center text-gray-400 hover:text-teal-600 transition">
-            <i class="fas fa-info-circle text-lg"></i>
-            <span class="text-[10px] font-medium">About</span>
+        <button onclick="showSection('myorders');loadCustomerOrders()" class="flex flex-col items-center gap-1 w-full h-full justify-center text-gray-400 hover:text-teal-600 transition">
+            <i class="fas fa-box text-lg"></i>
+            <span class="text-[10px] font-medium">Orders</span>
         </button>
         <div class="relative -top-5">
             <button onclick="toggleAiChat()" class="bg-gray-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-gray-500/40 border-4 border-gray-50 transform active:scale-95 transition">
-                <i class="fas fa-robot text-xl"></i>
+                <i class="fas fa-comment-medical text-xl"></i>
             </button>
         </div>
         <button onclick="showSection('contact')" class="flex flex-col items-center gap-1 w-full h-full justify-center text-gray-400 hover:text-teal-600 transition">
@@ -288,9 +193,18 @@
                 <div id="adminProfileInfo"></div>
                 <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
             </div>
+            
             <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
-                <button onclick="switchAdminView('products')" id="nav-products" class="w-full text-left p-4 rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-500/30 transition flex items-center gap-3"><i class="fas fa-box text-lg"></i> Inventory</button>
-                <button onclick="switchAdminView('orders')" id="nav-orders" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3"><i class="fas fa-clipboard-check text-lg"></i> Orders</button>
+                <button onclick="switchAdminView('products');toggleSidebar()" class="w-full text-left p-4 rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-500/30 transition flex items-center gap-3">
+                    <i class="fas fa-box text-lg"></i> Inventory
+                </button>
+                <button onclick="switchAdminView('orders');toggleSidebar()" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3">
+                    <i class="fas fa-clipboard-check text-lg"></i> Orders
+                </button>
+                <button onclick="switchAdminView('chats');toggleSidebar()" class="w-full text-left p-4 rounded-xl text-gray-600 hover:bg-gray-100 font-medium transition flex items-center gap-3">
+                    <i class="fas fa-comments text-lg"></i> Chats
+                </button>
+                
                 <div class="mt-8 pt-8 border-t border-gray-100">
                     <button onclick="switchToHome()" class="w-full text-left p-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold transition flex items-center gap-2 mb-2"><i class="fas fa-arrow-left"></i> Customer View</button>
                     <button onclick="logoutPartner()" class="w-full text-left p-3 text-red-500 hover:bg-red-50 rounded-xl font-bold transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout Partner</button>
@@ -308,6 +222,7 @@
             </div>
 
             <main class="flex-grow overflow-y-auto p-4 md:p-8 bg-[#f4f5f8]">
+                
                 <div id="admin-view-products" class="fade-in pb-20">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <h2 class="text-2xl font-bold text-gray-800">Your Inventory</h2>
@@ -342,131 +257,61 @@
                     <input type="text" id="adminOrderSearch" onkeyup="renderAdminOrders()" placeholder="Filter by Order ID..." class="w-full p-3 border border-gray-200 rounded-xl mb-6 bg-white shadow-sm outline-none">
                     <div id="adminOrderList" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
                 </div>
+
+                <div id="admin-view-chats" class="hidden-section fade-in pb-20 h-full flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Customer Chats</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[500px]">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
+                            <div class="p-4 border-b border-gray-100 bg-gray-50 font-bold text-gray-600">Recent Customers</div>
+                            <div id="adminChatContacts" class="flex-grow overflow-y-auto p-2 space-y-1">
+                                <p class="text-center text-sm text-gray-400 mt-10">Load orders to see contacts</p>
+                            </div>
+                        </div>
+                        
+                        <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
+                            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                <h3 id="adminChatHeaderName" class="font-bold text-gray-800">Select a contact</h3>
+                                <div id="adminChatHeaderID" class="text-xs text-gray-400 font-mono hidden"></div>
+                            </div>
+                            <div id="adminChatMessages" class="flex-grow overflow-y-auto p-4 space-y-3 bg-[#f0f2f5]">
+                                <div class="text-center text-gray-400 text-sm mt-10">Select a customer from the left to start chatting.</div>
+                            </div>
+                            <div class="p-3 border-t border-gray-100 flex gap-2">
+                                <input type="text" id="adminChatInput" class="flex-grow bg-gray-50 border rounded-full px-4 py-2 text-sm outline-none" placeholder="Type reply...">
+                                <button onclick="sendAdminReply()" class="bg-teal-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-teal-700 shadow-md"><i class="fas fa-paper-plane text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
 
-    <div id="prodDetailModal" class="fixed inset-0 hidden z-[120] flex items-end md:items-center justify-center modal-overlay">
-        <div class="bg-white w-full md:max-w-xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col fade-in">
-             <div class="relative h-[40vh] bg-white flex-shrink-0 border-b border-gray-100 p-2">
-                 <img id="pd_img" src="" class="w-full h-full object-contain">
-                 <button onclick="closeModal('prodDetailModal')" class="absolute top-4 right-4 bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-200 transition shadow-sm"><i class="fas fa-times text-lg"></i></button>
-             </div>
-             <div class="p-6 overflow-y-auto flex-grow bg-white">
-                 <div class="flex justify-between items-start mb-2">
-                     <h2 id="pd_name" class="text-2xl font-bold text-gray-800 leading-tight">Product Name</h2>
-                     <div class="text-xl font-extrabold text-teal-600" id="pd_price">₹0</div>
-                 </div>
-                 <div class="flex items-center gap-2 mb-4 text-xs text-gray-500">
-                     <span id="pd_cat" class="bg-teal-50 text-teal-700 px-2 py-1 rounded border border-teal-100 uppercase tracking-wide">Category</span>
-                     <span class="mx-1">•</span>
-                     <i class="fas fa-store text-teal-500"></i> <span id="pd_store">Store</span>
-                 </div>
-                 
-                 <div class="mb-6">
-                     <h4 class="font-bold text-sm text-gray-900 mb-2">Description</h4>
-                     <p id="pd_desc" class="text-gray-600 text-sm leading-relaxed">No description available.</p>
-                 </div>
-                 
-                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
-                     <h4 class="font-bold text-xs text-gray-400 uppercase mb-2">Store Address</h4>
-                     <p id="pd_addr" class="text-sm text-gray-700 font-medium">Loading address...</p>
-                     <p id="pd_city" class="text-xs text-teal-600 font-bold mt-1">City</p>
-                 </div>
-             </div>
-             <div class="p-4 border-t border-gray-100 bg-white md:rounded-b-3xl pb-safe">
-                 <button id="pd_btn" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold hover:bg-teal-700 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg">
-                     <span>Add to Cart</span>
-                 </button>
-             </div>
-        </div>
-    </div>
-
-    <div id="prodModal" class="fixed inset-0 hidden z-[120] flex items-center justify-center modal-overlay p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto fade-in">
-            <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                <h3 class="font-bold text-xl text-gray-800" id="prodModalTitle">Add Product</h3>
-                <button onclick="closeModal('prodModal')" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
-            </div>
-            <form id="prodForm" onsubmit="handleProdSave(event)" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="hidden" name="product_id" id="f_pid"><input type="hidden" name="store_id" id="f_sid">
-                <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Product Name</label><input name="medicine_name" id="f_name" required class="w-full border p-3 rounded-xl mt-1 focus:ring-2 focus:ring-teal-500 outline-none"></div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">Category</label>
-                    <input name="category" id="f_cat" list="cats" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500">
-                    <datalist id="cats">
-                        <option value="Tablet"><option value="Capsule"><option value="Syrup"><option value="Injection"><option value="Drops"><option value="Cream"><option value="Inhaler"><option value="Surgical"><option value="Ayurvedic"><option value="Baby Care"><option value="Personal Care"><option value="Supplements">
-                    </datalist>
-                </div>
-                <div><label class="text-xs font-bold text-gray-500 uppercase">Price (₹)</label><input type="number" name="price" id="f_price" required class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500"></div>
-                <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Image URL</label><input type="url" name="image_url" id="f_img" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500" placeholder="https://..."></div>
-                <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Full Description</label><textarea name="description" id="f_desc" rows="3" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Details about dosage, composition, etc."></textarea></div>
-                <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Private Notes (Admin Only)</label><textarea name="private_notes" id="f_note" rows="1" class="w-full border p-3 bg-yellow-50 rounded-xl mt-1 outline-none"></textarea></div>
-                <div class="md:col-span-2"><label class="flex items-center gap-2 font-bold text-gray-700 cursor-pointer p-2 border rounded-xl"><input type="checkbox" name="in_stock" id="f_stock" value="TRUE" checked class="w-5 h-5 accent-teal-600"> <span>Product is In Stock</span></label></div>
-                <div class="md:col-span-2 mt-2"><button type="submit" id="btnSaveProd" class="w-full bg-black text-white p-4 rounded-xl font-bold hover:bg-gray-800 shadow-lg text-lg">Save Product</button></div>
-            </form>
-        </div>
-    </div>
-
-    <div id="cartModal" class="fixed inset-0 hidden z-[130] flex items-end sm:items-center justify-center modal-overlay sm:p-4">
-        <div class="bg-white w-full sm:max-w-lg h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl shadow-2xl fade-in transform transition-transform">
-            
-            <div class="p-5 border-b border-gray-100 flex justify-between items-center shrink-0">
-                <h3 class="font-bold text-xl text-gray-800">Your Cart</h3>
-                <button onclick="closeModal('cartModal')" class="text-gray-400 hover:text-red-500 text-2xl transition">&times;</button>
-            </div>
-            
-            <div id="cartContent" class="p-5 overflow-y-auto flex-grow bg-white space-y-4"></div>
-            
-            <div class="p-5 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0 pb-safe">
-                <div class="flex justify-between font-bold text-xl mb-4 text-gray-800"><span>To Pay</span><span id="cartTotal" class="text-teal-600">₹0</span></div>
-                <button onclick="checkout()" id="btnCheckout" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Place Order</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="successModal" class="fixed inset-0 hidden z-[90] flex items-center justify-center modal-overlay p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center fade-in">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 text-4xl shadow-inner"><i class="fas fa-check"></i></div>
-            <h3 class="text-2xl font-extrabold text-gray-800 mb-2">Order Placed!</h3>
-            <p class="text-gray-500 text-sm mb-6">Your order has been sent to:</p>
-            <div id="successDetails" class="bg-gray-50 rounded-xl p-5 text-left space-y-4 mb-6 max-h-60 overflow-y-auto border border-gray-200 shadow-inner"></div>
-            <button onclick="closeModal('successModal')" class="mt-6 w-full bg-teal-600 text-white py-3 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg">Okay, Got it</button>
-        </div>
-    </div>
+    <div id="prodDetailModal" class="fixed inset-0 hidden z-[120] flex items-end md:items-center justify-center modal-overlay"><div class="bg-white w-full md:max-w-xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col fade-in"><div class="relative h-[40vh] bg-white flex-shrink-0 border-b border-gray-100 p-2"><img id="pd_img" src="" class="w-full h-full object-contain"><button onclick="closeModal('prodDetailModal')" class="absolute top-4 right-4 bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-200 transition shadow-sm"><i class="fas fa-times text-lg"></i></button></div><div class="p-6 overflow-y-auto flex-grow bg-white"><div class="flex justify-between items-start mb-2"><h2 id="pd_name" class="text-2xl font-bold text-gray-800 leading-tight">Product Name</h2><div class="text-xl font-extrabold text-teal-600" id="pd_price">₹0</div></div><div class="flex items-center gap-2 mb-4 text-xs text-gray-500"><span id="pd_cat" class="bg-teal-50 text-teal-700 px-2 py-1 rounded border border-teal-100 uppercase tracking-wide">Category</span><span class="mx-1">•</span><i class="fas fa-store text-teal-500"></i> <span id="pd_store">Store</span></div><div class="mb-6"><h4 class="font-bold text-sm text-gray-900 mb-2">Description</h4><p id="pd_desc" class="text-gray-600 text-sm leading-relaxed">No description available.</p></div><div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4"><h4 class="font-bold text-xs text-gray-400 uppercase mb-2">Store Address</h4><p id="pd_addr" class="text-sm text-gray-700 font-medium">Loading address...</p><p id="pd_city" class="text-xs text-teal-600 font-bold mt-1">City</p></div></div><div class="p-4 border-t border-gray-100 bg-white md:rounded-b-3xl pb-safe"><button id="pd_btn" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold hover:bg-teal-700 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg"><span>Add to Cart</span></button></div></div></div>
     
-    <div id="partnerSuccessModal" class="fixed inset-0 hidden z-[90] flex items-center justify-center modal-overlay p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center fade-in border-t-8 border-teal-500">
-            <div class="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-store text-teal-600 text-4xl"></i>
-            </div>
-            <h3 class="text-2xl font-extrabold text-gray-800 mb-2">Registration Successful!</h3>
-            <p class="text-gray-500 text-sm mb-6">Please save your Unique ID below to login.</p>
-            <div class="bg-gray-100 p-4 rounded-xl mb-6 border border-gray-200">
-                <p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Your Store ID</p>
-                <p id="regSuccessId" class="text-3xl font-mono font-bold text-teal-700 tracking-widest select-all">MED-XXXX</p>
-            </div>
-            <button onclick="finishPartnerReg()" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold hover:bg-teal-700 shadow-lg">Go to Login</button>
-        </div>
-    </div>
+    <div id="prodModal" class="fixed inset-0 hidden z-[120] flex items-center justify-center modal-overlay p-4"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto fade-in"><div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10"><h3 class="font-bold text-xl text-gray-800" id="prodModalTitle">Add Product</h3><button onclick="closeModal('prodModal')" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button></div><form id="prodForm" onsubmit="handleProdSave(event)" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4"><input type="hidden" name="product_id" id="f_pid"><input type="hidden" name="store_id" id="f_sid"><div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Product Name</label><input name="medicine_name" id="f_name" required class="w-full border p-3 rounded-xl mt-1 focus:ring-2 focus:ring-teal-500 outline-none"></div><div><label class="text-xs font-bold text-gray-500 uppercase">Category</label><input name="category" id="f_cat" list="cats" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500"><datalist id="cats"><option value="Tablet"><option value="Capsule"><option value="Syrup"><option value="Injection"><option value="Drops"><option value="Cream"><option value="Inhaler"><option value="Surgical"><option value="Ayurvedic"><option value="Baby Care"><option value="Personal Care"><option value="Supplements"></datalist></div><div><label class="text-xs font-bold text-gray-500 uppercase">Price (₹)</label><input type="number" name="price" id="f_price" required class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500"></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Image URL</label><input type="url" name="image_url" id="f_img" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500" placeholder="https://..."></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Full Description</label><textarea name="description" id="f_desc" rows="3" class="w-full border p-3 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Details about dosage, composition, etc."></textarea></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Private Notes (Admin Only)</label><textarea name="private_notes" id="f_note" rows="1" class="w-full border p-3 bg-yellow-50 rounded-xl mt-1 outline-none"></textarea></div><div class="md:col-span-2"><label class="flex items-center gap-2 font-bold text-gray-700 cursor-pointer p-2 border rounded-xl"><input type="checkbox" name="in_stock" id="f_stock" value="TRUE" checked class="w-5 h-5 accent-teal-600"> <span>Product is In Stock</span></label></div><div class="md:col-span-2 mt-2"><button type="submit" id="btnSaveProd" class="w-full bg-black text-white p-4 rounded-xl font-bold hover:bg-gray-800 shadow-lg text-lg">Save Product</button></div></form></div></div>
+    
+    <div id="cartModal" class="fixed inset-0 hidden z-[130] flex items-end sm:items-center justify-center modal-overlay sm:p-4"><div class="bg-white w-full sm:max-w-lg h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl shadow-2xl fade-in transform transition-transform"><div class="p-5 border-b border-gray-100 flex justify-between items-center shrink-0"><h3 class="font-bold text-xl text-gray-800">Your Cart</h3><button onclick="closeModal('cartModal')" class="text-gray-400 hover:text-red-500 text-2xl transition">&times;</button></div><div id="cartContent" class="p-5 overflow-y-auto flex-grow bg-white space-y-4"></div><div class="p-5 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0 pb-safe"><div class="flex justify-between font-bold text-xl mb-4 text-gray-800"><span>To Pay</span><span id="cartTotal" class="text-teal-600">₹0</span></div><button onclick="checkout()" id="btnCheckout" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Place Order</button></div></div></div>
+    
+    <div id="successModal" class="fixed inset-0 hidden z-[90] flex items-center justify-center modal-overlay p-4"><div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center fade-in"><div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 text-4xl shadow-inner"><i class="fas fa-check"></i></div><h3 class="text-2xl font-extrabold text-gray-800 mb-2">Order Placed!</h3><p class="text-gray-500 text-sm mb-6">Your order has been sent to:</p><div id="successDetails" class="bg-gray-50 rounded-xl p-5 text-left space-y-4 mb-6 max-h-60 overflow-y-auto border border-gray-200 shadow-inner"></div><button onclick="closeModal('successModal')" class="mt-6 w-full bg-teal-600 text-white py-3 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg">Okay, Got it</button></div></div>
+    
+    <div id="partnerSuccessModal" class="fixed inset-0 hidden z-[90] flex items-center justify-center modal-overlay p-4"><div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center fade-in border-t-8 border-teal-500"><div class="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-store text-teal-600 text-4xl"></i></div><h3 class="text-2xl font-extrabold text-gray-800 mb-2">Registration Successful!</h3><p class="text-gray-500 text-sm mb-6">Please save your Unique ID below to login.</p><div class="bg-gray-100 p-4 rounded-xl mb-6 border border-gray-200"><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Your Store ID</p><p id="regSuccessId" class="text-3xl font-mono font-bold text-teal-700 tracking-widest select-all">MED-XXXX</p></div><button onclick="finishPartnerReg()" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold hover:bg-teal-700 shadow-lg">Go to Login</button></div></div>
+    
+    <div id="authModal" class="fixed inset-0 hidden z-[100] flex items-center justify-center modal-overlay p-4"><div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md relative fade-in"><button onclick="closeModal('authModal')" class="absolute top-5 right-5 text-gray-300 hover:text-gray-600 text-xl transition">&times;</button><div id="authContent"></div></div></div>
 
-    <div id="authModal" class="fixed inset-0 hidden z-[100] flex items-center justify-center modal-overlay p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md relative fade-in">
-            <button onclick="closeModal('authModal')" class="absolute top-5 right-5 text-gray-300 hover:text-gray-600 text-xl transition">&times;</button>
-            <div id="authContent"></div>
-        </div>
-    </div>
     <script>
         // *** CONFIG ***
-        const API = 'https://script.google.com/macros/s/AKfycbyvl7ezlg-g-u0XUCTkIEFjBs8Nm6gFA5vNy7EVINSF0WRlkPqTHnKUefnSSPsGLyc1lA/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbxy1UaXKO9JR_QJXIzPnCbKhBrD8p3h-khtwskMk8TnSMQfcFPuh5MKbKQhEnzR5Uk7pA/exec';
         const KEY_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQY2BokImG-lKK2HjjAPxJIi2kwTLVuELWKB8BQXDEFRjG5cXn4Tj0x_qivopk9DPCCBBGDUF06FBvU/pub?output=csv';
         
         let GEMINI_API_KEY = null;
         let rawProducts=[], cart=[], user=null;
-        // Partner State
         let partnerId=null, partnerName='Partner';
         let rawAdminProducts=[], rawAdminOrders=[], rawCustomerOrders=[];
         let activeAdminOrderTab = 'Active';
+        let chatInterval = null;
+        let currentChatPartnerID = null;
 
         // *** INIT ***
         window.onload = async () => {
@@ -504,16 +349,8 @@
             }
         }
 
-        function checkPartnerAndRedirect() {
-            if(partnerId) loadAdminData(); 
-            else openAuth('partner');
-        }
-
-        function switchToHome() {
-            document.getElementById('app-admin').classList.add('hidden-section');
-            document.getElementById('app-public').classList.remove('hidden-section');
-            window.scrollTo(0,0);
-        }
+        function checkPartnerAndRedirect() { if(partnerId) loadAdminData(); else openAuth('partner'); }
+        function switchToHome() { document.getElementById('app-admin').classList.add('hidden-section'); document.getElementById('app-public').classList.remove('hidden-section'); window.scrollTo(0,0); }
 
         // *** PUBLIC FUNCTIONS ***
         async function loadHome() {
@@ -528,49 +365,30 @@
             document.getElementById('mainLoader').classList.add('hidden');
         }
 
-        // NEW: Populate City Dropdown dynamically
         function populateCityDropdown(products) {
             const cities = new Set();
             products.forEach(p => { if(p.store_city) cities.add(p.store_city); });
             const sel = document.getElementById('cityFilter');
             sel.innerHTML = '<option value="All">All Cities</option>';
-            cities.forEach(c => {
-                sel.innerHTML += `<option value="${c}">${c}</option>`;
-            });
+            cities.forEach(c => { sel.innerHTML += `<option value="${c}">${c}</option>`; });
         }
 
-        function filterCat(cat) {
-            if(cat === 'All') renderPublicGrid(rawProducts);
-            else renderPublicGrid(rawProducts.filter(p => p.category === cat));
-        }
+        function filterCat(cat) { if(cat === 'All') renderPublicGrid(rawProducts); else renderPublicGrid(rawProducts.filter(p => p.category === cat)); }
         
-        // NEW: Updated Search Logic (City + Area + Store)
         function searchPublic() { 
             const q = document.getElementById('publicSearch').value.toLowerCase(); 
             const cityFilter = document.getElementById('cityFilter').value;
-
             const filtered = rawProducts.filter(p => {
-                // 1. Check City Filter
                 if(cityFilter !== 'All' && p.store_city !== cityFilter) return false;
-
-                // 2. Check Search Text (Name, Category, Store Name, Address/Area)
-                if(q === '') return true; // If search is empty but city is selected
-
-                return (
-                    p.name.toLowerCase().includes(q) || 
-                    p.category.toLowerCase().includes(q) || 
-                    p.store_name.toLowerCase().includes(q) ||
-                    (p.store_city && p.store_city.toLowerCase().includes(q)) ||
-                    (p.store_address && p.store_address.toLowerCase().includes(q))
-                );
+                if(q === '') return true;
+                return (p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.store_name.toLowerCase().includes(q) || (p.store_city && p.store_city.toLowerCase().includes(q)));
             });
-
             renderPublicGrid(filtered); 
         }
 
         function renderPublicGrid(list) {
             const div = document.getElementById('publicGrid'); div.innerHTML = '';
-            if(!list.length) return div.innerHTML='<p class="col-span-full text-center text-gray-400 py-10 italic">No medicines found matching your criteria.</p>';
+            if(!list.length) return div.innerHTML='<p class="col-span-full text-center text-gray-400 py-10 italic">No medicines found.</p>';
             
             list.forEach(p => {
                 const stock = p.in_stock==='TRUE'||p.in_stock===true;
@@ -581,7 +399,7 @@
                         ${!stock ? '<span class="absolute top-2 left-2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md z-10 opacity-90">Out of Stock</span>' : ''}
                         
                         <div class="h-40 overflow-hidden bg-white relative p-2">
-                            <img src="${img}" class="w-full h-full object-contain group-hover:scale-105 transition duration-700" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=Image+Error'">
+                            <img src="${img}" class="w-full h-full object-contain group-hover:scale-105 transition duration-700" loading="lazy">
                         </div>
                         
                         <div class="p-4 flex-grow flex flex-col">
@@ -593,27 +411,31 @@
                                     <div class="text-[10px] text-gray-500 flex items-center gap-1"><i class="fas fa-map-marker-alt text-teal-500"></i> ${p.store_city || 'Nearby'}</div>
                                     <span class="font-extrabold text-lg text-gray-900">₹${p.price}</span>
                                 </div>
-                                <button onclick='event.stopPropagation();addToCart(${JSON.stringify(p)})' ${!stock?'disabled':''} class="${stock?'bg-teal-50 text-teal-700 border border-teal-100 hover:bg-teal-600 hover:text-white':'bg-gray-100 text-gray-300 cursor-not-allowed'} w-8 h-8 rounded-lg flex items-center justify-center transition shadow-sm">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                                <div class="flex gap-1">
+                                    <button onclick='event.stopPropagation();startDirectChat("${p.store_id}","${p.store_name}")' class="w-8 h-8 rounded-lg flex items-center justify-center transition shadow-sm bg-white text-teal-600 border border-teal-100 hover:bg-teal-50">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </button>
+                                    <button onclick='event.stopPropagation();addToCart(${JSON.stringify(p)})' ${!stock?'disabled':''} class="${stock?'bg-teal-50 text-teal-700 border border-teal-100 hover:bg-teal-600 hover:text-white':'bg-gray-100 text-gray-300 cursor-not-allowed'} w-8 h-8 rounded-lg flex items-center justify-center transition shadow-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>`;
             });
         }
 
-        // *** PRODUCT DETAIL (FULL IMAGE) ***
+        // *** PRODUCT DETAIL ***
         function openProductDetailModal(p) {
             if(!p) return;
             const stock = p.in_stock==='TRUE'||p.in_stock===true;
-
             document.getElementById('pd_img').src = p.image || 'https://via.placeholder.com/500?text=No+Image';
             document.getElementById('pd_name').innerText = p.name;
             document.getElementById('pd_price').innerText = '₹' + p.price;
             document.getElementById('pd_cat').innerText = p.category;
             document.getElementById('pd_store').innerText = p.store_name;
             document.getElementById('pd_city').innerText = p.store_city || 'City not listed';
-            document.getElementById('pd_desc').innerText = p.description || 'No detailed description provided by the seller.';
+            document.getElementById('pd_desc').innerText = p.description || 'No detailed description.';
             document.getElementById('pd_addr').innerText = p.store_address || 'Address hidden.';
 
             const btn = document.getElementById('pd_btn');
@@ -627,7 +449,6 @@
                 btn.className = "w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold cursor-not-allowed flex justify-center items-center gap-2 text-lg";
                 btn.disabled = true;
             }
-
             document.getElementById('prodDetailModal').classList.remove('hidden');
         }
 
@@ -653,7 +474,7 @@
                 t.innerHTML+=`
                 <tr class="border-b last:border-0 hover:bg-gray-50 transition group">
                     <td class="p-4 flex items-center gap-3">
-                        <img src="${img}" class="w-12 h-12 rounded-lg object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+                        <img src="${img}" class="w-12 h-12 rounded-lg object-cover border border-gray-200">
                         <div><div class="font-bold text-gray-800 text-sm">${p.name}</div><div class="text-[10px] text-gray-500 uppercase">${p.category}</div></div>
                     </td>
                     <td class="p-4 font-bold text-gray-700">₹${p.price}</td>
@@ -672,6 +493,7 @@
             const d = await res.json();
             rawAdminOrders = d.orders || [];
             filterAdminOrders(activeAdminOrderTab);
+            populateAdminChatContacts(); // Use orders to build chat contact list
         }
 
         function filterAdminOrders(tab) {
@@ -699,14 +521,17 @@
             list.forEach(o => {
                 const items = JSON.parse(o.items).map(i=>`<div class="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span class="text-gray-600">${i.name}</span><span class="font-bold text-gray-800">₹${i.price}</span></div>`).join('');
                 let actions = '';
-                if(o.status === 'Pending') actions = `<div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100"><button onclick="setStatus('${o.order_id}','Approved')" class="bg-teal-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 shadow-md">Approve</button><button onclick="setStatus('${o.order_id}','Cancelled')" class="bg-gray-100 text-red-600 py-2.5 rounded-xl text-sm font-bold hover:bg-red-50">Refuse</button></div>`;
+                if(o.status === 'Pending') actions = `<div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100"><button onclick="setStatus('${o.order_id}','Approved')" class="bg-teal-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 shadow-md">Approve</button><button onclick="setStatus('${o.order_id}','Refused')" class="bg-gray-100 text-red-600 py-2.5 rounded-xl text-sm font-bold hover:bg-red-50">Refuse</button></div>`;
                 else if (o.status === 'Approved') actions = `<div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100"><button onclick="setStatus('${o.order_id}','Delivered')" class="bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-md">Mark Delivered</button><button onclick="setStatus('${o.order_id}','Cancelled')" class="bg-gray-100 text-red-600 py-2.5 rounded-xl text-sm font-bold hover:bg-red-50">Cancel</button></div>`;
 
                 div.innerHTML += `
                     <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
                         <div class="flex justify-between items-start mb-3">
                             <div><div class="font-bold text-gray-800">${o.customer_name}</div><div class="text-[10px] text-gray-400 font-mono">#${o.order_id}</div></div>
-                            <a href="tel:${o.customer_phone}" class="bg-green-50 text-green-600 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-phone-alt text-xs"></i></a>
+                            <div class="flex gap-2">
+                                <button onclick="switchAdminView('chats');loadAdminChatConversation('${o.customer_phone}','${o.customer_name}')" class="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-comment-dots text-xs"></i></button>
+                                <a href="tel:${o.customer_phone}" class="bg-green-50 text-green-600 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-phone-alt text-xs"></i></a>
+                            </div>
                         </div>
                         <div class="bg-gray-50 p-3 rounded-xl text-xs text-gray-600 mb-3 flex items-start gap-2 leading-relaxed"><i class="fas fa-map-marker-alt text-teal-500 mt-0.5"></i> ${o.customer_address}</div>
                         <div class="mb-3">${items}</div>
@@ -719,30 +544,192 @@
             });
         }
 
-        // *** AUTH FUNCTIONS ***
-        function openAuth(type) {
-            document.getElementById('authModal').classList.remove('hidden'); const c = document.getElementById('authContent');
-            if(type==='login') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Welcome Back</h3><p class="text-sm text-gray-400 mb-6">Login to Nacsum</p><form onsubmit="doLogin(event)"><input name="phone" placeholder="Mobile Number" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50 focus:bg-white transition"><input type="password" name="password" placeholder="Password" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50 focus:bg-white transition"><button id="btnLogin" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Login</button></form><p class="mt-6 text-center text-sm text-gray-500">New? <span class="text-teal-600 font-bold cursor-pointer hover:underline" onclick="openAuth('register')">Create Account</span></p>`;
-            if(type==='register') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Create Account</h3><p class="text-sm text-gray-400 mb-6">Join Nacsum Biotech</p><form onsubmit="doReg(event)"><input name="name" placeholder="Full Name" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input name="phone" placeholder="Phone Number" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input type="password" name="password" placeholder="Set Password" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input name="address" placeholder="Delivery Address" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><button id="btnReg" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Sign Up</button></form><p class="mt-6 text-center text-sm text-gray-500">Existing? <span class="text-teal-600 font-bold cursor-pointer hover:underline" onclick="openAuth('login')">Login</span></p>`;
-            if(type==='partner') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Partner Login</h3><p class="text-sm text-gray-400 mb-6">Manage your store</p><form onsubmit="doPLogin(event)"><input id="pidIn" placeholder="Store ID (e.g. MED-1001)" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 text-center uppercase tracking-widest font-mono text-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input id="pPhoneIn" placeholder="Registered Mobile" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 text-center text-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><button id="btnPLogin" class="w-full bg-black text-white p-4 rounded-xl font-bold hover:bg-gray-800 transition shadow-lg text-lg">Access Dashboard</button></form><div class="mt-8 pt-6 border-t border-gray-100 text-center"><p class="text-sm text-gray-500 mb-3">Want to join us?</p><form onsubmit="doPReg(event)" class="text-left hidden bg-gray-50 p-4 rounded-xl border border-gray-100 animate-fade-in-up" id="pRegForm"><input name="store_name" placeholder="Pharmacy Name" required class="w-full border p-3 rounded-lg mb-2"><input name="owner_name" placeholder="Owner Name" required class="w-full border p-3 rounded-lg mb-2"><input name="phone" placeholder="Phone" required class="w-full border p-3 rounded-lg mb-2"><input name="city" placeholder="City" required class="w-full border p-3 rounded-lg mb-2"><input name="address" placeholder="Full Address" required class="w-full border p-3 rounded-lg mb-3"><button id="btnPReg" class="w-full bg-teal-600 text-white p-3 rounded-lg font-bold">Register Now</button></form><button onclick="document.getElementById('pRegForm').classList.remove('hidden');this.classList.add('hidden')" class="text-teal-600 font-bold text-sm border border-teal-200 px-4 py-2 rounded-full hover:bg-teal-50 transition">Register New Store</button></div>`;
+        function switchAdminView(v) {
+            // Hide all
+            document.getElementById('admin-view-products').classList.add('hidden-section');
+            document.getElementById('admin-view-orders').classList.add('hidden-section');
+            document.getElementById('admin-view-chats').classList.add('hidden-section');
+            
+            // Show Target
+            document.getElementById(`admin-view-${v}`).classList.remove('hidden-section');
+
+            // Find Buttons by Icon
+            const buttons = Array.from(document.querySelectorAll("button"));
+            const btnProd = buttons.find(b => b.innerHTML.includes('fa-box'));
+            const btnOrd  = buttons.find(b => b.innerHTML.includes('fa-clipboard-check'));
+            const btnChat = buttons.find(b => b.innerHTML.includes('fa-comments'));
+
+            const activeClass = ['bg-teal-600', 'text-white', 'font-bold', 'shadow-lg', 'shadow-teal-500/30'];
+            const inactiveClass = ['text-gray-600', 'hover:bg-gray-100', 'font-medium'];
+
+            const setStyle = (btn, active) => {
+                if(!btn) return;
+                btn.classList.remove(...activeClass, ...inactiveClass);
+                btn.classList.add(...(active ? activeClass : inactiveClass));
+            };
+
+            setStyle(btnProd, v==='products');
+            setStyle(btnOrd, v==='orders');
+            setStyle(btnChat, v==='chats');
+
+            if(v==='orders' || v==='chats') fetchAdminOrders(); // Fetch orders to populate chats too
         }
-        
-        async function doLogin(e) { e.preventDefault(); setLoading('btnLogin',true); const d=Object.fromEntries(new FormData(e.target)); d.action='login_customer'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnLogin',false); if(j.status==='success'){ user=j.customer_data; localStorage.setItem('mediUser',JSON.stringify(user)); updateAuthUI(); closeModal('authModal'); toast('Welcome back'); } else toast('Invalid credentials','error'); }
-        async function doReg(e) { e.preventDefault(); setLoading('btnReg',true); const d=Object.fromEntries(new FormData(e.target)); d.action='register_customer'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnReg',false); if(j.status==='success'){ user=j; localStorage.setItem('mediUser',JSON.stringify(user)); updateAuthUI(); closeModal('authModal'); toast('Account created'); } }
-        async function doPLogin(e) { e.preventDefault(); setLoading('btnPLogin',true); const id = document.getElementById('pidIn').value; const phone = document.getElementById('pPhoneIn').value; const res = await fetch(API, { method:'POST', body:JSON.stringify({ action:'login_store', store_id: id, phone: phone }) }); const j=await res.json(); setLoading('btnPLogin',false); if(j.status==='success'){ partnerId=j.store_data.id; partnerName=j.store_data.name; localStorage.setItem('mediPartner', JSON.stringify({id: partnerId, name: partnerName})); loadAdminData(); closeModal('authModal'); toast('Logged in as Partner'); updateAuthUI(); } else { toast(j.message,'error'); } }
-        async function doPReg(e) { e.preventDefault(); setLoading('btnPReg',true); const d=Object.fromEntries(new FormData(e.target)); d.action='register_store'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnPReg',false); if(j.status === 'error') { toast(j.message, 'error'); } else { closeModal('authModal'); document.getElementById('regSuccessId').innerText = j.store_id; document.getElementById('partnerSuccessModal').classList.remove('hidden'); } }
-        function logoutUser(){ localStorage.removeItem('mediUser'); user=null; updateAuthUI(); showPublicHome(); toast('Logged Out'); }
-        function logoutPartner(){ localStorage.removeItem('mediPartner'); partnerId=null; partnerName='Partner'; updateAuthUI(); showPublicHome(); toggleSidebar(); toast('Partner Logged Out'); }
 
-        // *** CART LOGIC ***
-        function addToCart(p) { cart.push(p); updateCartUI(); toast('Added to Cart'); }
-        function updateCartUI() { const count = cart.length; const mBadge = document.getElementById('cartCountMob'); if(count>0) { mBadge.innerText=count; mBadge.classList.remove('hidden'); } else mBadge.classList.add('hidden'); }
-        function openCart() { document.getElementById('cartModal').classList.remove('hidden'); const div = document.getElementById('cartContent'); div.innerHTML=''; let t=0; if(!cart.length) div.innerHTML='<div class="text-center py-10"><i class="fas fa-shopping-basket text-4xl text-gray-200 mb-3"></i><p class="text-gray-400">Your cart is empty.</p></div>'; cart.forEach((i,x) => { t+=Number(i.price); div.innerHTML += `<div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center text-teal-600"><i class="fas fa-prescription-bottle-alt"></i></div><div><b class="text-gray-800 text-sm block">${i.name}</b><span class="text-xs text-gray-500">${i.store_name}</span></div></div><div class="flex items-center gap-4"><span class="font-bold text-gray-800">₹${i.price}</span><button class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition" onclick="cart.splice(${x},1);openCart();updateCartUI()"><i class="fas fa-trash-alt"></i></button></div></div>`; }); document.getElementById('cartTotal').innerText = '₹'+t; }
-        async function checkout() { if(!user) { closeModal('cartModal'); return openAuth('login'); } if(!cart.length) return; setLoading('btnCheckout', true); const orders = {}; cart.forEach(i => { if(!orders[i.store_id]) orders[i.store_id]=[]; orders[i.store_id].push(i); }); const successData = []; for(const sid in orders) { const items = orders[sid]; const total = items.reduce((s,i)=>s+Number(i.price),0); const res = await fetch(API, {method:'POST', body:JSON.stringify({action:'place_order', store_id:sid, customer_name:user.name, customer_phone:user.phone, customer_address:user.address, order_items: JSON.stringify(items.map(x=>({name:x.name, price:x.price}))), total_amount: total})}); const d = await res.json(); if(d.status==='success') successData.push({store:d.store_name, phone:d.store_phone, items:items.length}); } setLoading('btnCheckout', false); cart=[]; updateCartUI(); closeModal('cartModal'); const detDiv = document.getElementById('successDetails'); detDiv.innerHTML=''; successData.forEach(s => { detDiv.innerHTML += `<div class="border-b border-gray-100 last:border-0 pb-3 mb-3"><p class="font-bold text-gray-800 text-lg">${s.store}</p><p class="text-xs text-gray-500 mb-2">Items Ordered: ${s.items}</p><a href="tel:${s.phone}" class="inline-flex items-center gap-2 text-teal-600 text-xs font-bold bg-teal-50 px-3 py-1 rounded-full"><i class="fas fa-phone-alt"></i> ${s.phone}</a></div>`; }); document.getElementById('successModal').classList.remove('hidden'); }
-        async function loadCustomerOrders() { showPublicHome(); document.getElementById('view-home').classList.add('hidden-section'); document.getElementById('view-myorders').classList.remove('hidden-section'); const div = document.getElementById('myOrdersList'); div.innerHTML='<div class="text-center py-20"><div class="spinner border-teal-600"></div><p class="mt-2 text-gray-500">Fetching your history...</p></div>'; if(!user) { div.innerHTML='<p class="text-center py-10">Please Login to view orders.</p>'; return; } const res = await fetch(`${API}?action=get_customer_orders&phone=${user.phone}`); const d = await res.json(); rawCustomerOrders = d.orders || []; filterMyOrders('Current'); }
-        function filterMyOrders(type) { document.getElementById('tabMy-Current').className = type==='Current' ? 'pb-3 border-b-2 border-teal-600 font-bold text-teal-600 px-4 transition' : 'pb-3 border-b-2 border-transparent text-gray-500 hover:text-teal-600 px-4 transition'; document.getElementById('tabMy-History').className = type==='History' ? 'pb-3 border-b-2 border-teal-600 font-bold text-teal-600 px-4' : 'pb-3 border-b-2 border-transparent text-gray-500 hover:text-teal-600 px-4 transition'; const div = document.getElementById('myOrdersList'); div.innerHTML=''; const list = rawCustomerOrders.filter(o => type==='Current' ? (o.status==='Pending'||o.status==='Approved') : (o.status!=='Pending'&&o.status!=='Approved')); if(!list.length) return div.innerHTML=`<div class="text-center py-10 bg-white rounded-2xl border border-gray-100 shadow-sm"><i class="fas fa-box-open text-4xl text-gray-200 mb-3"></i><p class="text-gray-400">No ${type.toLowerCase()} orders.</p></div>`; list.forEach(o => { const items = JSON.parse(o.items).map(i=>i.name).join(', '); let badge = 'bg-yellow-100 text-yellow-800'; if(o.status==='Approved') badge='bg-blue-100 text-blue-800'; if(o.status==='Delivered') badge='bg-green-100 text-green-800'; if(o.status==='Cancelled') badge='bg-red-100 text-red-800'; div.innerHTML += `<div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition duration-300"><div class="flex justify-between items-center mb-4"><span class="font-mono text-gray-500 text-xs">#${o.order_id}</span><span class="${badge} px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-sm">${o.status}</span></div><div class="flex items-start gap-4 mb-4"><div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500"><i class="fas fa-store"></i></div><div><p class="font-bold text-gray-800 text-lg">${o.store_name}</p><a href="tel:${o.store_phone}" class="text-xs text-teal-600 font-bold hover:underline"><i class="fas fa-phone-alt mr-1"></i> ${o.store_phone}</a></div></div><div class="bg-gray-50 p-4 rounded-xl mb-4 text-sm text-gray-600 leading-relaxed border border-gray-100">${items}</div><div class="pt-4 border-t border-gray-100 flex justify-between items-center"><span class="text-xs text-gray-400">${new Date(o.date).toLocaleDateString()}</span><span class="text-xl font-extrabold text-gray-800">₹${o.total}</span></div></div>`; }); }
+        // *** ADMIN CHAT LOGIC ***
+        function populateAdminChatContacts() {
+            const list = document.getElementById('adminChatContacts');
+            // Extract unique customers from order history
+            const customers = {};
+            rawAdminOrders.forEach(o => {
+                if(!customers[o.customer_phone]) customers[o.customer_phone] = o.customer_name;
+            });
 
-        // *** AI & UTILS ***
+            list.innerHTML = '';
+            for(const [phone, name] of Object.entries(customers)) {
+                list.innerHTML += `
+                <div onclick="loadAdminChatConversation('${phone}','${name}')" class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold"><i class="fas fa-user"></i></div>
+                    <div><div class="text-sm font-bold text-gray-800">${name}</div><div class="text-[10px] text-gray-400 font-mono">${phone}</div></div>
+                </div>`;
+            }
+        }
+
+        async function loadAdminChatConversation(phone, name) {
+            currentChatPartnerID = phone;
+            document.getElementById('adminChatHeaderName').innerText = name;
+            document.getElementById('adminChatHeaderID').innerText = phone;
+            
+            const div = document.getElementById('adminChatMessages');
+            div.innerHTML = '<div class="text-center py-10"><div class="spinner spinner-dark"></div></div>';
+            
+            // Start Polling
+            if(chatInterval) clearInterval(chatInterval);
+            fetchAdminChatHistory();
+            chatInterval = setInterval(fetchAdminChatHistory, 5000);
+        }
+
+        async function fetchAdminChatHistory() {
+            if(!currentChatPartnerID || !partnerId) return;
+            const res = await fetch(`${API}?action=get_chats&user1=${partnerId}&user2=${currentChatPartnerID}`);
+            const d = await res.json();
+            renderAdminMessages(d.chats || []);
+        }
+
+        function renderAdminMessages(chats) {
+            const div = document.getElementById('adminChatMessages');
+            div.innerHTML = '';
+            if(!chats.length) return div.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10">No messages yet.</div>';
+            
+            chats.forEach(c => {
+                const isMe = String(c.sender_id) === String(partnerId);
+                div.innerHTML += `
+                <div class="flex w-full ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="${isMe ? 'bg-teal-600 text-white rounded-l-xl rounded-tr-xl' : 'bg-white border border-gray-200 rounded-r-xl rounded-tl-xl'} px-4 py-2 shadow-sm max-w-[80%]">
+                        <p class="text-sm">${c.message}</p>
+                    </div>
+                </div>`;
+            });
+            div.scrollTop = div.scrollHeight;
+        }
+
+        async function sendAdminReply() {
+            const input = document.getElementById('adminChatInput');
+            const msg = input.value.trim();
+            if(!msg || !currentChatPartnerID) return;
+            
+            // Optimistic UI
+            const div = document.getElementById('adminChatMessages');
+            div.innerHTML += `<div class="flex w-full justify-end"><div class="bg-teal-600 text-white rounded-l-xl rounded-tr-xl px-4 py-2 shadow-sm max-w-[80%] opacity-50"><p class="text-sm">${msg}</p></div></div>`;
+            div.scrollTop = div.scrollHeight;
+            input.value='';
+
+            await fetch(API, {
+                method: 'POST',
+                body: JSON.stringify({action: 'send_chat', sender_id: partnerId, sender_name: partnerName, receiver_id: currentChatPartnerID, message: msg})
+            });
+            fetchAdminChatHistory();
+        }
+
+        // *** PUBLIC AI/DIRECT CHAT LOGIC ***
+        function startDirectChat(storeId, storeName) {
+            const input = document.getElementById('aiInput');
+            input.value = `@${storeId} `; // Use ID for precise targeting
+            toggleAiChat();
+            
+            // Show Context Bubble
+            const div = document.getElementById('aiMessages');
+            div.innerHTML += `<div class="text-center my-2 text-[10px] text-gray-400">Starting chat with <b>${storeName}</b></div>`;
+        }
+
+        function toggleAiChat() {
+            const w = document.getElementById('aiChatWindow');
+            if(w.classList.contains('hidden')) { w.classList.remove('hidden'); setTimeout(()=>document.getElementById('aiInput').focus(), 100); } 
+            else { w.classList.add('hidden'); }
+        }
+        function handleAiEnter(e) { if(e.key === 'Enter') sendUnifiedMessage(); }
+
+        async function sendUnifiedMessage() {
+            const input = document.getElementById('aiInput');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            if(!user && msg.startsWith('@')) { alert("Please login to chat with partners."); openAuth('login'); return; }
+
+            // 1. Show User Message
+            addChatBubble(msg, 'user');
+            input.value = '';
+            document.getElementById('aiTyping').classList.remove('hidden');
+
+            // 2. Check if Direct Message (@StoreID)
+            if(msg.startsWith('@')) {
+                const parts = msg.split(' ');
+                const receiverId = parts[0].substring(1); // Remove @
+                const cleanMsg = parts.slice(1).join(' ');
+                
+                try {
+                    await fetch(API, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'send_chat',
+                            sender_id: user.phone,
+                            sender_name: user.name,
+                            receiver_id: receiverId,
+                            message: cleanMsg
+                        })
+                    });
+                    document.getElementById('aiTyping').classList.add('hidden');
+                    addChatBubble(`Message sent to store. Check "Orders" or here later for replies.`, 'ai');
+                } catch(e) { 
+                    document.getElementById('aiTyping').classList.add('hidden');
+                    addChatBubble("Failed to send message.", 'ai'); 
+                }
+                return;
+            }
+
+            // 3. AI Logic
+            if(!GEMINI_API_KEY) await fetchApiKey();
+            const stockContext = rawProducts.length > 0 ? rawProducts.map(p => `${p.name} (₹${p.price})`).join(', ') : "No data.";
+            const prompt = `System: You are Nacsum Assistant. Stock: [${stockContext}]. User: "${msg}". Answer briefly.`;
+            
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const data = await fetchWithBackoff(payload);
+                document.getElementById('aiTyping').classList.add('hidden');
+                if (data?.candidates?.[0]?.content) addChatBubble(data.candidates[0].content.parts[0].text, 'ai');
+                else addChatBubble("I didn't get a valid response.", 'ai');
+            } catch (error) {
+                document.getElementById('aiTyping').classList.add('hidden');
+                addChatBubble("Connection error.", 'ai');
+            }
+        }
+
+        function addChatBubble(text, sender) {
+            const div = document.getElementById('aiMessages'); const isAi = sender === 'ai';
+            const html = `<div class="flex gap-3 ${isAi?'':'flex-row-reverse'}"><div class="w-8 h-8 rounded-full ${isAi?'bg-teal-100 text-teal-600':'bg-gray-800 text-white'} flex-shrink-0 flex items-center justify-center text-xs"><i class="fas ${isAi?'fa-robot':'fa-user'}"></i></div><div class="${isAi?'bg-white text-gray-700 rounded-tl-none border border-gray-100':'bg-teal-600 text-white rounded-tr-none'} p-3 rounded-2xl shadow-sm text-sm max-w-[80%]">${marked.parse(text)}</div></div>`;
+            div.insertAdjacentHTML('beforeend', html); div.scrollTop = div.scrollHeight;
+        }
+
+        // *** AUTH & UTILS ***
         function fetchApiKey() {
              return new Promise((resolve, reject) => {
                 Papa.parse(KEY_CSV, { download: true, header: false, complete: function(results) {
@@ -752,11 +739,9 @@
                 });
             });
         }
-        
         async function fetchWithBackoff(payload) {
              const models = ['gemini-1.5-flash', 'gemini-3-flash-preview']; 
              let lastError = null;
-             
              for (const model of models) {
                  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
                  try {
@@ -769,53 +754,47 @@
              throw lastError || new Error("All AI models failed.");
         }
 
-        function toggleAiChat() {
-            const w = document.getElementById('aiChatWindow');
-            if(w.classList.contains('hidden')) { w.classList.remove('hidden'); setTimeout(()=>document.getElementById('aiInput').focus(), 100); } 
-            else { w.classList.add('hidden'); }
+        function openAuth(type) {
+            document.getElementById('authModal').classList.remove('hidden'); const c = document.getElementById('authContent');
+            if(type==='login') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Welcome Back</h3><p class="text-sm text-gray-400 mb-6">Login to Nacsum</p><form onsubmit="doLogin(event)"><input name="phone" placeholder="Mobile Number" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50 focus:bg-white transition"><input type="password" name="password" placeholder="Password" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50 focus:bg-white transition"><button id="btnLogin" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Login</button></form><p class="mt-6 text-center text-sm text-gray-500">New? <span class="text-teal-600 font-bold cursor-pointer hover:underline" onclick="openAuth('register')">Create Account</span></p>`;
+            if(type==='register') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Create Account</h3><p class="text-sm text-gray-400 mb-6">Join Nacsum Biotech</p><form onsubmit="doReg(event)"><input name="name" placeholder="Full Name" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input name="phone" placeholder="Phone Number" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input type="password" name="password" placeholder="Set Password" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input name="address" placeholder="Delivery Address" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><button id="btnReg" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold hover:bg-teal-700 transition shadow-lg text-lg">Sign Up</button></form><p class="mt-6 text-center text-sm text-gray-500">Existing? <span class="text-teal-600 font-bold cursor-pointer hover:underline" onclick="openAuth('login')">Login</span></p>`;
+            if(type==='partner') c.innerHTML=`<h3 class="font-bold text-2xl mb-1 text-gray-800">Partner Login</h3><p class="text-sm text-gray-400 mb-6">Manage your store</p><form onsubmit="doPLogin(event)"><input id="pidIn" placeholder="Store ID (e.g. MED-1001)" required class="w-full border border-gray-200 p-4 rounded-xl mb-3 text-center uppercase tracking-widest font-mono text-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><input id="pPhoneIn" placeholder="Registered Mobile" required class="w-full border border-gray-200 p-4 rounded-xl mb-6 text-center text-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-teal-500"><button id="btnPLogin" class="w-full bg-black text-white p-4 rounded-xl font-bold hover:bg-gray-800 transition shadow-lg text-lg">Access Dashboard</button></form><div class="mt-8 pt-6 border-t border-gray-100 text-center"><p class="text-sm text-gray-500 mb-3">Want to join us?</p><form onsubmit="doPReg(event)" class="text-left hidden bg-gray-50 p-4 rounded-xl border border-gray-100 animate-fade-in-up" id="pRegForm"><input name="store_name" placeholder="Pharmacy Name" required class="w-full border p-3 rounded-lg mb-2"><input name="owner_name" placeholder="Owner Name" required class="w-full border p-3 rounded-lg mb-2"><input name="phone" placeholder="Phone" required class="w-full border p-3 rounded-lg mb-2"><input name="city" placeholder="City" required class="w-full border p-3 rounded-lg mb-2"><input name="address" placeholder="Full Address" required class="w-full border p-3 rounded-lg mb-3"><button id="btnPReg" class="w-full bg-teal-600 text-white p-3 rounded-lg font-bold">Register Now</button></form><button onclick="document.getElementById('pRegForm').classList.remove('hidden');this.classList.add('hidden')" class="text-teal-600 font-bold text-sm border border-teal-200 px-4 py-2 rounded-full hover:bg-teal-50 transition">Register New Store</button></div>`;
         }
-        function handleAiEnter(e) { if(e.key === 'Enter') sendAiMessage(); }
-        async function sendAiMessage() {
-            if(!GEMINI_API_KEY) await fetchApiKey();
-            const input = document.getElementById('aiInput'); const msg = input.value.trim(); if(!msg) return;
-            addChatBubble(msg, 'user'); input.value = '';
-            document.getElementById('aiTyping').classList.remove('hidden'); const msgsDiv = document.getElementById('aiMessages'); msgsDiv.scrollTop = msgsDiv.scrollHeight;
-            
-            const stockContext = rawProducts && rawProducts.length > 0 ? rawProducts.map(p => `${p.name} (₹${p.price}, ${p.in_stock?'Stock':'No'})`).join(', ') : "No data.";
-            const prompt = `System: You are Nacsum Biotech Assistant. Stock: [${stockContext}]. User Question: "${msg}". Answer briefly. End with 'Consult a doctor'.`;
-            
-            try {
-                const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const data = await fetchWithBackoff(payload);
-                document.getElementById('aiTyping').classList.add('hidden');
-                if (data?.candidates?.[0]?.content) addChatBubble(data.candidates[0].content.parts[0].text, 'ai');
-                else addChatBubble("I didn't get a valid response.", 'ai');
-            } catch (error) {
-                console.error(error);
-                document.getElementById('aiTyping').classList.add('hidden');
-                addChatBubble("Connection error. Please try again later.", 'ai');
-            }
-        }
-        function addChatBubble(text, sender) {
-            const div = document.getElementById('aiMessages'); const isAi = sender === 'ai';
-            const html = `<div class="flex gap-3 ${isAi?'':'flex-row-reverse'}"><div class="w-8 h-8 rounded-full ${isAi?'bg-teal-100 text-teal-600':'bg-gray-800 text-white'} flex-shrink-0 flex items-center justify-center text-xs"><i class="fas ${isAi?'fa-robot':'fa-user'}"></i></div><div class="${isAi?'bg-white text-gray-700 rounded-tl-none border border-gray-100':'bg-teal-600 text-white rounded-tr-none'} p-3 rounded-2xl shadow-sm text-sm max-w-[80%]">${marked.parse(text)}</div></div>`;
-            div.insertAdjacentHTML('beforeend', html); div.scrollTop = div.scrollHeight;
+        
+        async function doLogin(e) { e.preventDefault(); setLoading('btnLogin',true); const d=Object.fromEntries(new FormData(e.target)); d.action='login_customer'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnLogin',false); if(j.status==='success'){ user=j.customer_data; localStorage.setItem('mediUser',JSON.stringify(user)); updateAuthUI(); closeModal('authModal'); toast('Welcome back'); } else toast('Invalid credentials','error'); }
+        async function doReg(e) { e.preventDefault(); setLoading('btnReg',true); const d=Object.fromEntries(new FormData(e.target)); d.action='register_customer'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnReg',false); if(j.status==='success'){ user=j; localStorage.setItem('mediUser',JSON.stringify(user)); updateAuthUI(); closeModal('authModal'); toast('Account created'); } }
+        async function doPLogin(e) { e.preventDefault(); setLoading('btnPLogin',true); const id = document.getElementById('pidIn').value; const phone = document.getElementById('pPhoneIn').value; const res = await fetch(API, { method:'POST', body:JSON.stringify({ action:'login_store', store_id: id, phone: phone }) }); const j=await res.json(); setLoading('btnPLogin',false); if(j.status==='success'){ partnerId=j.store_data.id; partnerName=j.store_data.name; localStorage.setItem('mediPartner', JSON.stringify({id: partnerId, name: partnerName})); loadAdminData(); closeModal('authModal'); toast('Logged in as Partner'); updateAuthUI(); } else { toast(j.message,'error'); } }
+        async function doPReg(e) { e.preventDefault(); setLoading('btnPReg',true); const d=Object.fromEntries(new FormData(e.target)); d.action='register_store'; const res=await fetch(API,{method:'POST',body:JSON.stringify(d)}); const j=await res.json(); setLoading('btnPReg',false); if(j.status === 'error') { toast(j.message, 'error'); } else { closeModal('authModal'); document.getElementById('regSuccessId').innerText = j.store_id; document.getElementById('partnerSuccessModal').classList.remove('hidden'); } }
+        
+        function logoutUser(){ localStorage.removeItem('mediUser'); user=null; updateAuthUI(); showPublicHome(); toast('Logged Out'); }
+        function logoutPartner(){ localStorage.removeItem('mediPartner'); partnerId=null; partnerName='Partner'; updateAuthUI(); showPublicHome(); toggleSidebar(); toast('Partner Logged Out'); }
+
+        function addToCart(p) { cart.push(p); updateCartUI(); toast('Added to Cart'); }
+        function updateCartUI() { const count = cart.length; const mBadge = document.getElementById('cartCountMob'); if(count>0) { mBadge.innerText=count; mBadge.classList.remove('hidden'); } else mBadge.classList.add('hidden'); }
+        function openCart() { document.getElementById('cartModal').classList.remove('hidden'); const div = document.getElementById('cartContent'); div.innerHTML=''; let t=0; if(!cart.length) div.innerHTML='<div class="text-center py-10"><i class="fas fa-shopping-basket text-4xl text-gray-200 mb-3"></i><p class="text-gray-400">Your cart is empty.</p></div>'; cart.forEach((i,x) => { t+=Number(i.price); div.innerHTML += `<div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center text-teal-600"><i class="fas fa-prescription-bottle-alt"></i></div><div><b class="text-gray-800 text-sm block">${i.name}</b><span class="text-xs text-gray-500">${i.store_name}</span></div></div><div class="flex items-center gap-4"><span class="font-bold text-gray-800">₹${i.price}</span><button class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition" onclick="cart.splice(${x},1);openCart();updateCartUI()"><i class="fas fa-trash-alt"></i></button></div></div>`; }); document.getElementById('cartTotal').innerText = '₹'+t; }
+        
+        async function checkout() { 
+            if(!user) { closeModal('cartModal'); return openAuth('login'); } if(!cart.length) return; 
+            setLoading('btnCheckout', true); const orders = {}; cart.forEach(i => { if(!orders[i.store_id]) orders[i.store_id]=[]; orders[i.store_id].push(i); }); const successData = []; 
+            for(const sid in orders) { const items = orders[sid]; const total = items.reduce((s,i)=>s+Number(i.price),0); const res = await fetch(API, {method:'POST', body:JSON.stringify({action:'place_order', store_id:sid, customer_name:user.name, customer_phone:user.phone, customer_address:user.address, order_items: JSON.stringify(items.map(x=>({name:x.name, price:x.price}))), total_amount: total})}); const d = await res.json(); if(d.status==='success') successData.push({store:d.store_name, phone:d.store_phone}); } 
+            setLoading('btnCheckout', false); cart=[]; updateCartUI(); closeModal('cartModal'); 
+            const detDiv = document.getElementById('successDetails'); detDiv.innerHTML=''; successData.forEach(s => { detDiv.innerHTML += `<div class="border-b border-gray-100 last:border-0 pb-3 mb-3"><p class="font-bold text-gray-800 text-lg">${s.store}</p><p class="text-xs text-gray-500 mb-2">Order Sent</p><a href="tel:${s.phone}" class="inline-flex items-center gap-2 text-teal-600 text-xs font-bold bg-teal-50 px-3 py-1 rounded-full"><i class="fas fa-phone-alt"></i> ${s.phone}</a></div>`; }); document.getElementById('successModal').classList.remove('hidden'); 
         }
 
-        // Standard Utils
-        function toggleSidebar() { const s = document.getElementById('adminSidebar'); const o = document.getElementById('sidebarOverlay'); if(s.classList.contains('-translate-x-full')) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { s.classList.add('-translate-x-full'); o.classList.add('hidden'); } }
-        function finishPartnerReg() { closeModal('partnerSuccessModal'); openAuth('partner'); }
-        function switchAdminView(v) { document.getElementById('admin-view-products').classList.add('hidden-section'); document.getElementById('admin-view-orders').classList.add('hidden-section'); document.getElementById(`admin-view-${v}`).classList.remove('hidden-section'); if(v==='orders') fetchAdminOrders(); }
-        async function handleProdSave(e) { e.preventDefault(); setLoading('btnSaveProd',true); const d=Object.fromEntries(new FormData(e.target)); d.action=d.product_id?'edit_product':'add_product'; d.in_stock=document.getElementById('f_stock').checked?'TRUE':'FALSE'; await fetch(API,{method:'POST',body:JSON.stringify(d)}); setLoading('btnSaveProd',false); closeModal('prodModal'); fetchAdminProducts(); toast('Product Saved'); }
-        function openProductModal(p=null) { document.getElementById('prodModal').classList.remove('hidden'); document.getElementById('prodForm').reset(); document.getElementById('prodModalTitle').innerText = p?'Edit Product':'Add Product'; document.getElementById('f_pid').value = p?p.id:''; document.getElementById('f_sid').value = partnerId; if(p){ document.getElementById('f_name').value=p.name; document.getElementById('f_cat').value=p.category; document.getElementById('f_price').value=p.price; document.getElementById('f_img').value=p.image; document.getElementById('f_desc').value=p.description; document.getElementById('f_note').value=p.private_notes; document.getElementById('f_stock').checked=(p.in_stock==='TRUE'||p.in_stock===true); } }
-        async function toggleStock(pid, s) { rawAdminProducts.find(p=>p.id===pid).in_stock=s; renderAdminProducts(); await fetch(API,{method:'POST',body:JSON.stringify({action:'edit_product',product_id:pid,store_id:partnerId,only_stock:true,in_stock:s})}); toast('Stock updated'); }
-        async function delProd(pid) { if(!confirm('Delete?'))return; await fetch(API,{method:'POST',body:JSON.stringify({action:'delete_product',product_id:pid,store_id:partnerId})}); fetchAdminProducts(); toast('Deleted'); }
-        async function setStatus(oid, status) { const order = rawAdminOrders.find(o => o.order_id === oid); if(order) order.status = status; renderAdminOrders(); await fetch(API, {method:'POST', body:JSON.stringify({action:'update_order_status', store_id:partnerId, order_id:oid, status:status})}); toast(`Order ${status}`); }
+        async function loadCustomerOrders() { showPublicHome(); document.getElementById('view-home').classList.add('hidden-section'); document.getElementById('view-myorders').classList.remove('hidden-section'); const container = document.getElementById('myOrdersList'); if(!user) { container.innerHTML = `<div class="text-center py-20"><i class="fas fa-lock text-4xl text-gray-200 mb-3"></i><p class="text-gray-400">Please Login to view orders.</p><button onclick="openAuth('login')" class="mt-4 bg-teal-600 text-white px-6 py-2 rounded-full font-bold shadow-lg">Login Now</button></div>`; return; } container.innerHTML = `<div class="sticky top-0 bg-[#f0f2f5] z-10 pt-2 pb-2"><div class="relative mb-3"><i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i><input type="text" id="orderSearchInput" onkeyup="searchOrders()" placeholder="Search Store Name or Order ID..." class="w-full bg-white border border-gray-200 pl-11 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-sm font-bold"></div></div><div id="myOrdersResults" class="pb-24"><div class="text-center py-10"><div class="spinner spinner-dark"></div><p class="mt-2 text-gray-500 text-xs animate-pulse">Loading all orders...</p></div></div>`; try { const res = await fetch(`${API}?action=get_customer_orders&phone=${user.phone}`); const d = await res.json(); rawCustomerOrders = d.orders || []; renderMyOrders(rawCustomerOrders); } catch(e) { document.getElementById('myOrdersResults').innerHTML = '<p class="text-center text-red-400 py-10">Failed to load orders.</p>'; } }
+        function searchOrders() { const q = document.getElementById('orderSearchInput').value.toLowerCase(); if(q === '') { renderMyOrders(rawCustomerOrders); return; } const filtered = rawCustomerOrders.filter(o => o.store_name.toLowerCase().includes(q) || o.order_id.toString().toLowerCase().includes(q)); renderMyOrders(filtered); }
+        function renderMyOrders(list) { const div = document.getElementById('myOrdersResults'); if(!div) return; div.innerHTML = ''; if(!list.length) { div.innerHTML = `<div class="text-center py-10 bg-white rounded-2xl border border-gray-100 shadow-sm"><i class="fas fa-box-open text-4xl text-gray-200 mb-3"></i><p class="text-gray-400">No orders found.</p></div>`; return; } list.forEach(o => { const dateObj = new Date(o.date); const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); let itemsStr = ""; try { const itemsArr = JSON.parse(o.items); itemsStr = itemsArr.map(i => `<span class="bg-gray-50 text-gray-600 border border-gray-200 px-2 py-1 rounded text-[10px] font-bold mr-1 inline-block mb-1">${i.name} x${i.qty || 1}</span>`).join(''); } catch(e) { itemsStr = "Items list unavailable"; } let badge = 'bg-yellow-100 text-yellow-800 border-yellow-200'; let icon = 'fa-clock'; const s = o.status; if(s==='Approved' || s==='Accepted' || s==='Processing') { badge='bg-blue-100 text-blue-800 border-blue-200'; icon='fa-cog fa-spin'; } if(s==='Delivered' || s==='Completed') { badge='bg-green-100 text-green-800 border-green-200'; icon='fa-check-circle'; } if(s==='Cancelled' || s==='Rejected') { badge='bg-red-100 text-red-800 border-red-200'; icon='fa-times-circle'; } div.innerHTML += `<div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition duration-300 mb-4 group"><div class="flex justify-between items-start mb-3"><div><span class="font-mono text-gray-400 text-[10px]">#${o.order_id}</span><h3 class="font-bold text-gray-800 text-sm">${o.store_name}</h3></div><span class="${badge} border px-2 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest shadow-sm flex items-center gap-1"><i class="fas ${icon}"></i> ${o.status}</span></div><div class="flex items-center gap-4 py-2 mb-3 border-t border-b border-dashed border-gray-100"><div class="flex items-center gap-1.5 text-xs font-bold text-gray-500"><i class="far fa-calendar-alt text-teal-500"></i> ${dateStr}</div><div class="w-px h-3 bg-gray-200"></div><div class="flex items-center gap-1.5 text-xs font-bold text-gray-500"><i class="far fa-clock text-orange-400"></i> ${timeStr}</div></div><div class="mb-3">${itemsStr}</div><div class="flex justify-between items-center pt-2"><div><p class="text-[9px] text-gray-400 uppercase font-bold">Total</p><span class="text-lg font-extrabold text-gray-800">₹${o.total}</span></div>${ (s === 'Pending' || s === 'Processing' || s === 'Approved' || s === 'Accepted') ? `<a href="tel:${o.store_phone}" class="text-xs text-white bg-teal-600 px-4 py-2 rounded-lg font-bold hover:bg-teal-700 transition shadow-md"><i class="fas fa-phone-alt mr-1"></i> Call Store</a>` : `<button disabled class="text-xs text-gray-400 bg-gray-100 px-4 py-2 rounded-lg font-bold cursor-not-allowed">${s === 'Cancelled' || s === 'Rejected' ? 'Order Closed' : 'Completed'}</button>` }</div></div>`; }); }
+
         function toast(m,t='s'){const d=document.createElement('div');d.className=`p-4 px-6 rounded-xl shadow-2xl text-white text-sm font-bold animate-bounce ${t==='s'?'bg-gray-900':'bg-red-500'}`;d.innerHTML=t==='s'?`<i class="fas fa-check-circle mr-2"></i> ${m}`:`<i class="fas fa-exclamation-circle mr-2"></i> ${m}`;document.getElementById('toastBox').appendChild(d);setTimeout(()=>d.remove(),3000);}
         function setLoading(id,l){const b=document.getElementById(id);if(l){b.disabled=true;b.dataset.txt=b.innerText;b.innerHTML='<div class="spinner border-white"></div>';b.classList.add('opacity-75','cursor-not-allowed');}else{b.disabled=false;b.innerText=b.dataset.txt;b.classList.remove('opacity-75','cursor-not-allowed');}}
         function showSection(id){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden-section'));document.getElementById(`view-${id}`).classList.remove('hidden-section'); window.scrollTo(0,0);}
         function showPublicHome() { document.getElementById('app-admin').classList.add('hidden-section'); document.getElementById('app-public').classList.remove('hidden-section'); showSection('home'); }
         function closeModal(id){document.getElementById(id).classList.add('hidden');}
+        async function handleProdSave(e) { e.preventDefault(); setLoading('btnSaveProd',true); const d=Object.fromEntries(new FormData(e.target)); d.action=d.product_id?'edit_product':'add_product'; d.in_stock=document.getElementById('f_stock').checked?'TRUE':'FALSE'; await fetch(API,{method:'POST',body:JSON.stringify(d)}); setLoading('btnSaveProd',false); closeModal('prodModal'); fetchAdminProducts(); toast('Product Saved'); }
+        function openProductModal(p=null) { document.getElementById('prodModal').classList.remove('hidden'); document.getElementById('prodForm').reset(); document.getElementById('prodModalTitle').innerText = p?'Edit Product':'Add Product'; document.getElementById('f_pid').value = p?p.id:''; document.getElementById('f_sid').value = partnerId; if(p){ document.getElementById('f_name').value=p.name; document.getElementById('f_cat').value=p.category; document.getElementById('f_price').value=p.price; document.getElementById('f_img').value=p.image; document.getElementById('f_desc').value=p.description; document.getElementById('f_note').value=p.private_notes; document.getElementById('f_stock').checked=(p.in_stock==='TRUE'||p.in_stock===true); } }
+        async function toggleStock(pid, s) { rawAdminProducts.find(p=>p.id===pid).in_stock=s; renderAdminProducts(); await fetch(API,{method:'POST',body:JSON.stringify({action:'edit_product',product_id:pid,store_id:partnerId,only_stock:true,in_stock:s})}); toast('Stock updated'); }
+        async function delProd(pid) { if(!confirm('Delete?'))return; await fetch(API,{method:'POST',body:JSON.stringify({action:'delete_product',product_id:pid,store_id:partnerId})}); fetchAdminProducts(); toast('Deleted'); }
+        async function setStatus(oid, status) { const order = rawAdminOrders.find(o => o.order_id === oid); if(order) order.status = status; renderAdminOrders(); await fetch(API, {method:'POST', body:JSON.stringify({action:'update_order_status', store_id:partnerId, order_id:oid, status:status})}); toast(`Order ${status}`); }
     </script>
 </body>
 </html>
